@@ -1,0 +1,2 @@
+frag ParameterTest(a: int, b: int):
+    return <>{{ a + b }}</>

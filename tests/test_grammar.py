@@ -196,3 +196,34 @@ def test_exercise_list():
             False,
         )
     ]
+
+
+def test_parameters():
+    with open("tests/data/parameters.pyf", "r") as f:
+        source = f.read()
+
+    source, fragment = grammar.expect_fragment(source)
+
+    assert source == "\n"
+
+    assert fragment.name == "ParameterTest"
+    assert fragment.parameters == "a: int, b: int"
+    assert fragment.body == ""
+    assert fragment.children == [Interpolation("a + b")]
+
+
+def test_body():
+    with open("tests/data/body.pyf", "r") as f:
+        source = f.read()
+
+    source, fragment = grammar.expect_fragment(source)
+
+    assert source == "\n"
+
+    assert fragment.name == "BodyTest"
+    assert fragment.parameters == ""
+    assert fragment.body == 'title = "hello, world"\n    subtitle = "this is a test"\n    '
+    assert fragment.children == [
+        HTMLElement("h1", [], [Interpolation("title")], False),
+        HTMLElement("h2", [], [Interpolation("subtitle")], False),
+    ]

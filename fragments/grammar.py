@@ -7,7 +7,7 @@ WHITESPACE = r"\s*"
 
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 PARAM_LIST = r"(.*?)(?=\))"
-FRAGMENT_BODY = r"(.*?)(?=return)"
+FRAGMENT_BODY = r"([\s\S]*?)(?=return)"
 STRING_CONTENTS = r"(.*?)(?=\")"
 FOR_BLOCK_ITERATOR = r"(.*?)(?= in )"
 FOR_BLOCK_ITERABLE = r"(.*?)(?= %})"
@@ -33,7 +33,7 @@ def expect_regex(source: str, pattern: str, label: str) -> tuple[str, str]:
     """Expect the source to start with the given pattern, return the source after the pattern and the found match."""
     source, result = optional_regex(source, pattern)
     if result is None:
-        raise ParsingError(f"Expected {label} but got {source[:25]}...")
+        raise ParsingError(f"Expected {label} but got {source[:100]}...")
     return source, result
 
 
