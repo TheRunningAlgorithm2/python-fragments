@@ -9,6 +9,7 @@ class Node(Protocol): ...
 class Fragment:
     name: str
     parameters: str
+    body: str
     children: list[Node]
 
 
@@ -24,6 +25,7 @@ class HTMLElement:
 class HTMLAttribute:
     name: str
     value: str | None
+    interpolation: "Interpolation | None"
 
 
 @dataclass

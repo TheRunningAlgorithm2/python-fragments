@@ -1,0 +1,6 @@
+frag WhileBlockTest():
+    return <>
+        {% while value is not None %}
+            <div></div>
+        {% endwhile %}
+    </>
