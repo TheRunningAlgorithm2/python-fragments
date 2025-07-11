@@ -1,10 +1,10 @@
 import re
-from pdb import set_trace
 
 from fragments.nodes import ForBlock, Fragment, HTMLAttribute, HTMLElement, HTMLText, IfBlock, Interpolation, Node, WhileBlock
 
 WHITESPACE = r"\s*"
 
+PYTHON = r"([\s\S]*?)(?=frag)|[\s\S]*$"
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 PARAM_LIST = r"(.*?)(?=\))"
 FRAGMENT_BODY = r"([\s\S]*?)(?=return)"

@@ -1,6 +1,6 @@
 import argparse
 
-from fragments import grammar
+from fragments import transpiler
 
 
 def parse_args() -> argparse.Namespace:
@@ -13,8 +13,7 @@ def main():
     args = parse_args()
     with open(args.input, "r") as f:
         source = f.read()
-    source, fragment = grammar.expect_fragment(source)
-    print(fragment.template(0))
+    print(transpiler.transpile(source))
 
 
 if __name__ == "__main__":
