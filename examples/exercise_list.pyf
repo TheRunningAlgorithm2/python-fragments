@@ -1,0 +1,12 @@
+from examples.exercise import Exercise
+
+
+frag ExerciseList(exercises: list[Exercise]):
+    exercise_names = [exercise.name for exercise in exercises]
+    return <>
+        <ul>
+            {% for exercise in exercise_names %}
+                <li>{{ exercise }}</li>
+            {% endfor %}
+        </ul>
+    </>

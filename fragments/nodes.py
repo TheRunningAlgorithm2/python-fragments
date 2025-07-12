@@ -17,13 +17,15 @@ class Fragment:
 
     def template(self, indent: int) -> Template:
         outer = Template(indent)
-        outer.add(f"frag {self.name}({self.parameters}):")
+        outer.add(f"def {self.name}({self.parameters}):")
         inner = Template(indent + 1)
         inner.add(self.body)
         inner.add('result = ""')
         for child in self.children:
             inner.include(child.template(indent + 1))
+        inner.add("return result")
         outer.include(inner)
+
         return outer
 
 
