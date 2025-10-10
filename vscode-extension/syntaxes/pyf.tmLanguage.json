@@ -1,0 +1,63 @@
+{
+    "scopeName": "source.pyf",
+    "patterns": [
+      {
+        "name": "meta.fragment.html",
+        "begin": "<>",
+        "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.pyf" } },
+        "end": "</>",
+        "endCaptures": { "0": { "name": "punctuation.section.embedded.end.pyf" } },
+        "contentName": "text.html.basic",
+        "patterns": [
+          { "include": "text.html.basic" },
+  
+          {
+            "name": "meta.embedded.inline.python",
+            "begin": "\\{\\{",
+            "beginCaptures": { "0": { "name": "punctuation.definition.embedded.begin.py" } },
+            "end": "\\}\\}",
+            "endCaptures": { "0": { "name": "punctuation.definition.embedded.end.py" } },
+            "patterns": [{ "include": "source.python" }]
+          },
+  
+          {
+            "name": "meta.embedded.block.start.python",
+            "begin": "\\{%\\s*(for|if|while|call)\\b",
+            "beginCaptures": {
+              "0": { "name": "punctuation.definition.tag.begin.py" },
+              "1": { "name": "keyword.control.python" }
+            },
+            "end": "%\\}",
+            "endCaptures": { "0": { "name": "punctuation.definition.tag.end.py" } },
+            "patterns": [{ "include": "source.python" }]
+          },
+  
+          {
+            "name": "meta.embedded.block.middle.python",
+            "begin": "\\{%\\s*(elif|else)\\b",
+            "beginCaptures": {
+              "0": { "name": "punctuation.definition.tag.begin.py" },
+              "1": { "name": "keyword.control.python" }
+            },
+            "end": "%\\}",
+            "endCaptures": { "0": { "name": "punctuation.definition.tag.end.py" } },
+            "patterns": [{ "include": "source.python" }]
+          },
+  
+          {
+            "name": "meta.embedded.block.end.python",
+            "begin": "\\{%\\s*(end(for|if|while|call))\\s*%\\}",
+            "beginCaptures": {
+              "0": { "name": "punctuation.definition.tag.begin.py" },
+              "1": { "name": "keyword.control.python" },
+              "2": { "name": "keyword.control.python" }
+            },
+            "end": "(?=$)"
+          }
+        ]
+      },
+  
+      { "include": "source.python" }
+    ]
+  }
+  

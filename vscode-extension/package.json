@@ -1,0 +1,32 @@
+{
+  "name": "python-fragments",
+  "displayName": "Python Fragments",
+  "version": "0.0.1",
+  "publisher": "you",
+  "engines": { "vscode": "^1.90.0" },
+  "contributes": {
+    "languages": [
+      {
+        "id": "pyf",
+        "aliases": ["Python Fragments", "pyf"],
+        "extensions": [".pyf"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pyf",
+        "scopeName": "source.pyf",
+        "path": "./syntaxes/pyf.tmLanguage.json",
+        "embeddedLanguages": {
+          "text.html.basic": "html",
+          "meta.fragment.html": "html",
+          "meta.embedded.inline.python": "python",
+          "meta.embedded.block.start.python": "python",
+          "meta.embedded.block.middle.python": "python",
+          "meta.embedded.block.end.python": "python"
+        }
+      }
+    ]
+  }
+}
