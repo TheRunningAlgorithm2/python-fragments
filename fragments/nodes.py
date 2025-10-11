@@ -1,134 +1,124 @@
 from dataclasses import dataclass
 from typing import Protocol
 
-from fragments.template import Template
+from fragments.template import Python
 
 
-class Node(Protocol):
-    def template(self, indent: int) -> Template: ...
+class ASTNode(Protocol):
+    def python(self, indent: int) -> Python: ...
 
 
 @dataclass
-class Fragment:
-    name: str
-    parameters: str
-    body: str
-    children: list[Node]
+class ASTFragment:
+    children: list[ASTNode]
 
-    def template(self, indent: int) -> Template:
-        outer = Template(indent)
-        outer.add(f"def {self.name}({self.parameters}):")
-        inner = Template(indent + 1)
-        inner.add(self.body)
-        inner.add('result = ""')
+    def python(self, indent: int) -> Python:
+        python = Python(indent)
+        python.add('result = ""')
         for child in self.children:
-            inner.include(child.template(indent + 1))
-        inner.add("return result")
-        outer.include(inner)
-
-        return outer
+            python.include(child.python(indent))
+        python.add("return result")
+        return python
 
 
 @dataclass
-class HTMLElement:
+class ASTHTMLElement:
     name: str
-    attributes: list["HTMLAttribute"]
-    children: list[Node]
+    attributes: list["ASTHTMLAttribute"]
+    children: list[ASTNode]
     one_line: bool
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
-        result.add_string_to_result(f"<{self.name}")
+    def python(self, indent: int) -> Python:
+        python = Python(indent)
+        python.add(f'result += "<{self.name}"')
 
         for attribute in self.attributes:
-            result.add_string_to_result(" ")
-            result.include(attribute.template(indent))
+            python.add('result += " "')
+            python.include(attribute.python(indent))
 
-        result.add_string_to_result(">")
+        python.add('result += ">"')
 
         for child in self.children:
-            result.include(child.template(indent))
+            python.include(child.python(indent))
 
-        result.add_string_to_result(f"</{self.name}>")
-        return result
+        python.add(f'result += "</{self.name}>"')
+        return python
 
 
 @dataclass
-class HTMLAttribute:
+class ASTHTMLAttribute:
     name: str
     value: str | None
-    interpolation: "Interpolation | None"
+    interpolation: "ASTInterpolation | None"
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
-        result.add_string_to_result(self.name)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
+        result.add(f'result += "{self.name}"')
 
         if self.value is not None:
-            result.add_string_to_result('=\\"')
-            result.add_string_to_result(self.value)
-            result.add_string_to_result('\\"')
+            result.add(f'result += "=\\"{self.value}\\""')
         elif self.interpolation is not None:
-            result.add_string_to_result('=\\"')
-            result.include(self.interpolation.template(indent))
+            result.add(f'result += "=\\"{self.interpolation.expression}\\""')
+            result.include(self.interpolation.python(indent))
 
         return result
 
 
 @dataclass
-class HTMLText:
+class ASTHTMLText:
     text: str
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
-        result.add_string_to_result(self.text)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
+        result.add(f'result += "{self.text}"')
         return result
 
 
 @dataclass
-class ForBlock:
+class ASTForBlock:
     iterator: str
     iterable: str
-    children: list[Node]
+    children: list[ASTNode]
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
         result.add("for " + self.iterator + " in " + self.iterable + ":")
         for child in self.children:
-            result.include(child.template(indent + 1))
+            result.include(child.python(indent + 1))
         return result
 
 
 @dataclass
-class IfBlock:
+class ASTIfBlock:
     condition: str
-    children: list[Node]
+    children: list[ASTNode]
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
         result.add("if " + self.condition + ":")
         for child in self.children:
-            result.include(child.template(indent + 1))
+            result.include(child.python(indent + 1))
         return result
 
 
 @dataclass
-class WhileBlock:
+class ASTWhileBlock:
     condition: str
-    children: list[Node]
+    children: list[ASTNode]
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
         result.add("while " + self.condition + ":")
         for child in self.children:
-            result.include(child.template(indent + 1))
+            result.include(child.python(indent + 1))
         return result
 
 
 @dataclass
-class Interpolation:
+class ASTInterpolation:
     expression: str
 
-    def template(self, indent: int) -> Template:
-        result = Template(indent)
-        result.add_plain_to_result(self.expression)
+    def python(self, indent: int) -> Python:
+        result = Python(indent)
+        result.add(f"result += {self.expression}")
         return result

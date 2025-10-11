@@ -1,2 +1,0 @@
-frag Test():
-    return <><div hx-get="/api/resource"></div></>

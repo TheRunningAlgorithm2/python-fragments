@@ -10,9 +10,12 @@ def transpile(source: str) -> str:
         result = python
 
     while len(source) > 0:
-        if source.startswith("frag"):
+        if source.lstrip().startswith("return <>"):
+            spaces = len(source) - len(source.lstrip())
+            indent = spaces // 4
+            source = source.lstrip()
             source, fragment = grammar.expect_fragment(source)
-            result += str(fragment.template(0))
+            result += str(fragment.python(indent))
         else:
             source, python = grammar.expect_regex(source, grammar.PYTHON, "python source")
             result += python

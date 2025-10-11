@@ -1,10 +1,10 @@
 import re
 
-from fragments.nodes import ForBlock, Fragment, HTMLAttribute, HTMLElement, HTMLText, IfBlock, Interpolation, Node, WhileBlock
+from fragments.nodes import ASTForBlock, ASTFragment, ASTHTMLAttribute, ASTHTMLElement, ASTHTMLText, ASTIfBlock, ASTInterpolation, ASTNode, ASTWhileBlock
 
 WHITESPACE = r"\s*"
 
-PYTHON = r"([\s\S]*?)(?=frag)|[\s\S]*$"
+PYTHON = r"([\s\S]*?)(?=[ ]*return <>)|[\s\S]*$"
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 PARAM_LIST = r"(.*?)(?=\))"
 FRAGMENT_BODY = r"([\s\S]*?)(?=return)"
@@ -44,30 +44,12 @@ def expect_string(source: str, string: str) -> str:
     return source[len(string) :]
 
 
-def expect_fragment(source: str) -> tuple[str, Fragment]:
+def expect_fragment(source: str) -> tuple[str, ASTFragment]:
     """The top level of the recursive descent grammar."""
-    source = expect_string(source, "frag ")
-    source, name = expect_regex(source, IDENTIFIER, "fragment name")
-    source = expect_string(source, "(")
-
-    params = ""
-    if not source.startswith(")"):
-        source, params = expect_regex(source, PARAM_LIST, "parameter list")
-
-    source = expect_string(source, ")")
-    source = expect_string(source, ":")
+    source = expect_string(source, "return <>")
     source, _ = optional_regex(source, WHITESPACE)
 
-    body = ""
-    if not source.startswith("return"):
-        source, body = expect_regex(source, FRAGMENT_BODY, "fragment body")
-
-    source = expect_string(source, "return")
-    source = expect_string(source, " ")
-    source = expect_string(source, "<>")
-    source, _ = optional_regex(source, WHITESPACE)
-
-    children: list[Node] = []
+    children: list[ASTNode] = []
     while not source.startswith("</>"):
         source, _ = optional_regex(source, WHITESPACE)
         if source.startswith("</>"):
@@ -78,10 +60,10 @@ def expect_fragment(source: str) -> tuple[str, Fragment]:
     source, _ = optional_regex(source, WHITESPACE)
     source = expect_string(source, "</>")
 
-    return source, Fragment(name, params, body, children)
+    return source, ASTFragment(children)
 
 
-def expect_expression(source: str) -> tuple[str, Node]:
+def expect_expression(source: str) -> tuple[str, ASTNode]:
     """Any HTML / functional block that might appear as part of the fragment."""
     if source.startswith("<"):
         source, html_element = expect_html_element(source)
@@ -107,18 +89,18 @@ def expect_expression(source: str) -> tuple[str, Node]:
     return source, html_text
 
 
-def expect_html_element(source: str) -> tuple[str, HTMLElement]:
+def expect_html_element(source: str) -> tuple[str, ASTHTMLElement]:
     """An HTML element that may appear in the fragment tree."""
     source = expect_string(source, "<")
     source, _ = optional_regex(source, WHITESPACE)
     source, name = expect_regex(source, HTML_IDENTIFIER, "element name")
     source, _ = optional_regex(source, WHITESPACE)
 
-    attributes: list[HTMLAttribute] = []
+    attributes: list[ASTHTMLAttribute] = []
     while not (source.startswith(">") or source.startswith("/>")):
         source, attribute_name = expect_regex(source, HTML_IDENTIFIER, "attribute name")
         if not source.startswith("="):
-            attribute = HTMLAttribute(attribute_name, None, None)
+            attribute = ASTHTMLAttribute(attribute_name, None, None)
             attributes.append(attribute)
             continue
         source = expect_string(source, "=")
@@ -127,17 +109,17 @@ def expect_html_element(source: str) -> tuple[str, HTMLElement]:
             source = expect_string(source, '"')
             source, attribute_value = expect_regex(source, STRING_CONTENTS, "attribute value")
             source = expect_string(source, '"')
-            attribute = HTMLAttribute(attribute_name, attribute_value, None)
+            attribute = ASTHTMLAttribute(attribute_name, attribute_value, None)
             attributes.append(attribute)
         elif source.startswith("{{ "):
             source, interpolation = expect_interpolation(source)
-            attribute = HTMLAttribute(attribute_name, None, interpolation)
+            attribute = ASTHTMLAttribute(attribute_name, None, interpolation)
             attributes.append(attribute)
 
         source, _ = optional_regex(source, WHITESPACE)
 
     if source.startswith("/>"):
-        html_element = HTMLElement(name, attributes, [], True)
+        html_element = ASTHTMLElement(name, attributes, [], True)
         return source, html_element
 
     source = expect_string(source, ">")
@@ -159,11 +141,11 @@ def expect_html_element(source: str) -> tuple[str, HTMLElement]:
     source, _ = optional_regex(source, WHITESPACE)
     source = expect_string(source, ">")
 
-    html_element = HTMLElement(name, attributes, children, False)
+    html_element = ASTHTMLElement(name, attributes, children, False)
     return source, html_element
 
 
-def expect_for_block(source: str) -> tuple[str, ForBlock]:
+def expect_for_block(source: str) -> tuple[str, ASTForBlock]:
     """A for-loop control block."""
     source = expect_string(source, "{% for ")
     source, iterator = expect_regex(source, FOR_BLOCK_ITERATOR, "for block iterator")
@@ -181,10 +163,10 @@ def expect_for_block(source: str) -> tuple[str, ForBlock]:
 
     source = expect_string(source, "{% endfor %}")
 
-    return source, ForBlock(iterator, iterable, children)
+    return source, ASTForBlock(iterator, iterable, children)
 
 
-def expect_if_block(source: str) -> tuple[str, IfBlock]:
+def expect_if_block(source: str) -> tuple[str, ASTIfBlock]:
     """An "if" control block."""
     source = expect_string(source, "{% if ")
     source, condition = expect_regex(source, IF_CONDITION, "if condition")
@@ -200,11 +182,11 @@ def expect_if_block(source: str) -> tuple[str, IfBlock]:
 
     source = expect_string(source, "{% endif %}")
 
-    if_block = IfBlock(condition, children)
+    if_block = ASTIfBlock(condition, children)
     return source, if_block
 
 
-def expect_while_block(source: str) -> tuple[str, WhileBlock]:
+def expect_while_block(source: str) -> tuple[str, ASTWhileBlock]:
     """A while-loop control block."""
     source = expect_string(source, "{% while ")
     source, condition = expect_regex(source, WHILE_CONDITION, "while condition")
@@ -219,19 +201,19 @@ def expect_while_block(source: str) -> tuple[str, WhileBlock]:
 
     source = expect_string(source, "{% endwhile %}")
 
-    while_block = WhileBlock(condition, children)
+    while_block = ASTWhileBlock(condition, children)
     return source, while_block
 
 
-def expect_interpolation(source: str) -> tuple[str, Interpolation]:
+def expect_interpolation(source: str) -> tuple[str, ASTInterpolation]:
     """An interpolation block."""
     source = expect_string(source, "{{ ")
     source, expression = expect_regex(source, INTERPOLATION_EXPRESSION, "expression")
     source = expect_string(source, " }}")
-    return source, Interpolation(expression)
+    return source, ASTInterpolation(expression)
 
 
-def expect_html_text(source: str) -> tuple[str, HTMLText]:
+def expect_html_text(source: str) -> tuple[str, ASTHTMLText]:
     """Text as the child of an HTML expression."""
     source, text = expect_regex(source, HTML_TEXT, "text")
-    return source, HTMLText(text)
+    return source, ASTHTMLText(text)

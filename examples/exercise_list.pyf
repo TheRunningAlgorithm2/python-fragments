@@ -1,12 +1,15 @@
 from examples.exercise import Exercise
 
 
-frag ExerciseList(exercises: list[Exercise]):
+def ExerciseList(exercises: list[Exercise]):
     exercise_names = [exercise.name for exercise in exercises]
-    return <>
-        <ul>
-            {% for exercise in exercise_names %}
-                <li>{{ exercise }}</li>
-            {% endfor %}
-        </ul>
-    </>
+    def inner():
+        return <>
+            <ul class="test">
+                {% for exercise_name in exercise_names %}
+                    <li>{{ exercise_name }}</li>
+                {% endfor %}
+            </ul>
+        </>
+    
+    return inner()

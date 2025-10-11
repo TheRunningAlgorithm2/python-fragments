@@ -1,8 +1,0 @@
-frag ExerciseList():
-    return <>
-        <ul>
-            {% for exercise in exercises %}
-                <li id={{ exercise.id }}>{{ exercise.name }}</li>
-            {% endfor %}
-        </ul>
-    </>

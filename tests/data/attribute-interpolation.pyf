@@ -1,2 +1,0 @@
-frag AttributeInterpolationTest():
-    return <><div data={{ data }}></div></>

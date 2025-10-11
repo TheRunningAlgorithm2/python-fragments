@@ -1,6 +1,0 @@
-frag IfBlockTest():
-    return <>
-        {% if value is not None %}
-            <div></div>
-        {% endif %}
-    </>
