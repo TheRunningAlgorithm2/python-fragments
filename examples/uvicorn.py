@@ -3,7 +3,6 @@ from fragments import frag_loader
 frag_loader.init()
 
 import uvicorn
-
 from examples.fastapi import app
 
 if __name__ == "__main__":

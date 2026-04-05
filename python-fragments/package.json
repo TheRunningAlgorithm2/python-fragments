@@ -1,0 +1,46 @@
+{
+  "name": "python-fragments",
+  "displayName": "python-fragments",
+  "description": "Adds Python Fragments LSP support to VS Code",
+  "version": "0.0.1",
+  "activationEvents": ["onLanguage:python-fragments"],
+  "main": "./dist/extension.js",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "python-fragments",
+        "aliases": ["Python Fragments"],
+        "extensions": [".pyf"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "python-fragments",
+        "scopeName": "source.python.fragments",
+        "path": "./syntaxes/python.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "python-fragments",
+        "path": "./snippets/python-fragments.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npx tsc"
+  },
+  "devDependencies": {
+    "@types/node": "22.x",
+    "@types/vscode": "^1.105.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

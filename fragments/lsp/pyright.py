@@ -87,13 +87,28 @@ def send(data: dict[str, Any], converter: Converter, timeout: float = 10, send_i
             raise TimeoutError(f"Request {method} timed out after {timeout} seconds - ids in responses: {_responses.keys()}")
 
 
+def send_response(data: dict[str, Any], converter: Converter) -> None:
+    assert _pyright.stdin is not None
+    assert "id" in data, "id is required for response"
+
+    if "params" in data:
+        data["params"] = converter.unstructure(data["params"])
+
+    request_body = json.dumps({"jsonrpc": "2.0", **data}).encode("utf-8")
+    content_length = len(request_body)
+
+    _pyright.stdin.write(f"Content-Length: {content_length}\r\n\r\n".encode("utf-8"))
+    _pyright.stdin.write(request_body)
+    _pyright.stdin.flush()
+
+
 def send_notification(data: dict[str, Any], converter: Converter, timeout: float = 10) -> None:
     assert _pyright.stdin is not None
 
     if "params" in data:
         data["params"] = converter.unstructure(data["params"])
 
-    request_body = json.dumps({"jsonrpc": "2.0", "method": data["method"], **data}).encode("utf-8")
+    request_body = json.dumps({"jsonrpc": "2.0", **data}).encode("utf-8")
     content_length = len(request_body)
 
     _pyright.stdin.write(f"Content-Length: {content_length}\r\n\r\n".encode("utf-8"))

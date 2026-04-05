@@ -22,11 +22,4 @@ app = FastAPI()
 @app.get("/exercises/list", response_class=HTMLResponse)
 def ExerciseList():
     exercise_names = [exercise.name for exercise in LIST]
-
-    return <>
-        <ul class="test">
-            {% for exercise_name in exercise_names %}
-                <li>{{ exercise_name }}</li>
-            {% endfor %}
-        </ul>
-    </>
+    return "test"

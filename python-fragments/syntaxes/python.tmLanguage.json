@@ -1,0 +1,22 @@
+{
+  "scopeName": "source.python.fragments",
+  "name": "Python Fragments",
+  "patterns": [
+    {
+      "begin": "<>",
+      "end": "</>",
+      "patterns": [{ "include": "text.html.basic" }]
+    },
+    {
+      "begin": "({%)\\s*(for)\\s+",
+      "end": "(%})",
+      "patterns": [{ "include": "source.python" }]
+    },
+    {
+      "match": "({%)\\s*(endfor)\\s*(%})"
+    },
+    { "include": "source.python" }
+  ],
+  "repository": {},
+  "fileTypes": ["pyf"]
+}

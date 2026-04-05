@@ -18,7 +18,6 @@ LIST = [
 
 app = FastAPI()
 
-
 @app.get("/exercises/list", response_class=HTMLResponse)
 def ExerciseList():
     exercise_names = [exercise.name for exercise in LIST]
