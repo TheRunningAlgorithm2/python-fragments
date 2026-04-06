@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, Sequence
 
 from fragments.template import Python
 
@@ -25,7 +25,7 @@ class ASTFragment:
 class ASTHTMLElement:
     name: str
     attributes: list["ASTHTMLAttribute"]
-    children: list[ASTNode]
+    children: Sequence["ASTHTMLElement | ASTHTMLText | ASTInterpolation"]
     one_line: bool
 
     def python(self, indent: int) -> Python:

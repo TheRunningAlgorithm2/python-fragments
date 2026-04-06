@@ -1,19 +1,45 @@
 from fragments import grammar
-from fragments.nodes import ASTForBlock, ASTHTMLAttribute, ASTHTMLElement, ASTHTMLText, ASTIfBlock, ASTInterpolation, ASTWhileBlock
+from fragments.nodes import ASTHTMLAttribute, ASTHTMLElement, ASTHTMLText, ASTInterpolation
+
+
+def test_full():
+    """A fragment that has only one child which is a single HTML Element."""
+    with open("tests/data/full.py", "r") as f:
+        source = f.read()
+    source, fragment = grammar.expect_fragment(source)
+    assert source == ""
+    assert fragment.children == [
+        ASTHTMLElement(
+            "div",
+            [ASTHTMLAttribute("classes", "flex flex-col gap-3", None)],
+            [
+                ASTHTMLElement(
+                    "div",
+                    [ASTHTMLAttribute("for", None, ASTInterpolation("item in user.items")), ASTHTMLAttribute("classes", "p-3 rounded-lg bg-gray-800", None)],
+                    [
+                        ASTHTMLElement("p", [ASTHTMLAttribute("style", None, ASTInterpolation('{"color": "red"}'))], [ASTInterpolation("item.name")], False),
+                        ASTHTMLElement("p", [ASTHTMLAttribute("if", None, ASTInterpolation("item.description"))], [ASTInterpolation("item.description")], False),
+                        ASTHTMLElement("p", [], [ASTHTMLText("This is an item")], False),
+                        ASTHTMLElement("input", [], [], True),
+                    ],
+                    False,
+                )
+            ],
+            False,
+        )
+    ]
+
 
 # def test_element_only():
 #     """A fragment that has only one child which is a single HTML Element."""
-#     with open("tests/data/element-only.pyf", "r") as f:
+#     with open("tests/data/element-only.py", "r") as f:
 #         source = f.read()
 
 #     source, fragment = grammar.expect_fragment(source)
 
-#     assert source == "\n"
+#     assert source == ""
 
-#     assert fragment.name == "Test"
-#     assert fragment.parameters == ""
-#     assert fragment.body == ""
-#     assert fragment.children == [HTMLElement("h1", [], [], False)]
+#     assert fragment.children == [ASTHTMLElement("h1", [], [], False)]
 
 
 # def test_element_text():
@@ -104,48 +130,6 @@ from fragments.nodes import ASTForBlock, ASTHTMLAttribute, ASTHTMLElement, ASTHT
 #     assert fragment.parameters == ""
 #     assert fragment.body == ""
 #     assert fragment.children == [HTMLElement("div", [HTMLAttribute("data", None, Interpolation("data"))], [], False)]
-
-
-# def test_for_block():
-#     with open("tests/data/for-block.pyf", "r") as f:
-#         source = f.read()
-
-#     source, fragment = grammar.expect_fragment(source)
-
-#     assert source == "\n"
-
-#     assert fragment.name == "ForBlockTest"
-#     assert fragment.parameters == ""
-#     assert fragment.body == ""
-#     assert fragment.children == [ForBlock("item", "items", [HTMLElement("div", [], [], False)])]
-
-
-# def test_if_block():
-#     with open("tests/data/if-block.pyf", "r") as f:
-#         source = f.read()
-
-#     source, fragment = grammar.expect_fragment(source)
-
-#     assert source == "\n"
-
-#     assert fragment.name == "IfBlockTest"
-#     assert fragment.parameters == ""
-#     assert fragment.body == ""
-#     assert fragment.children == [IfBlock("value is not None", [HTMLElement("div", [], [], False)])]
-
-
-# def test_while_block():
-#     with open("tests/data/while-block.pyf", "r") as f:
-#         source = f.read()
-
-#     source, fragment = grammar.expect_fragment(source)
-
-#     assert source == "\n"
-
-#     assert fragment.name == "WhileBlockTest"
-#     assert fragment.parameters == ""
-#     assert fragment.body == ""
-#     assert fragment.children == [WhileBlock("value is not None", [HTMLElement("div", [], [], False)])]
 
 
 # def test_exercise_list():

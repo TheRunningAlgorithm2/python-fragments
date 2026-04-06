@@ -46,8 +46,7 @@ def expect_string(source: str, string: str) -> str:
 
 def expect_fragment(source: str) -> tuple[str, ASTFragment]:
     """The top level of the recursive descent grammar."""
-    source = expect_string(source, "return <>")
-    source, _ = optional_regex(source, WHITESPACE)
+    source = expect_string(source, "<>")
 
     children: list[ASTNode] = []
     while not source.startswith("</>"):
@@ -69,19 +68,7 @@ def expect_expression(source: str) -> tuple[str, ASTNode]:
         source, html_element = expect_html_element(source)
         return source, html_element
 
-    if source.startswith("{% for"):
-        source, for_block = expect_for_block(source)
-        return source, for_block
-
-    if source.startswith("{% if"):
-        source, if_block = expect_if_block(source)
-        return source, if_block
-
-    if source.startswith("{% while"):
-        source, while_block = expect_while_block(source)
-        return source, while_block
-
-    if source.startswith("{{ "):
+    if source.startswith("{{"):
         source, interpolation = expect_interpolation(source)
         return source, interpolation
 
@@ -119,6 +106,7 @@ def expect_html_element(source: str) -> tuple[str, ASTHTMLElement]:
         source, _ = optional_regex(source, WHITESPACE)
 
     if source.startswith("/>"):
+        source = expect_string(source, "/>")
         html_element = ASTHTMLElement(name, attributes, [], True)
         return source, html_element
 
@@ -145,71 +133,13 @@ def expect_html_element(source: str) -> tuple[str, ASTHTMLElement]:
     return source, html_element
 
 
-def expect_for_block(source: str) -> tuple[str, ASTForBlock]:
-    """A for-loop control block."""
-    source = expect_string(source, "{% for ")
-    source, iterator = expect_regex(source, FOR_BLOCK_ITERATOR, "for block iterator")
-    source = expect_string(source, " in ")
-    source, iterable = expect_regex(source, FOR_BLOCK_ITERABLE, "for block iterable")
-    source = expect_string(source, " %}")
-
-    source, _ = optional_regex(source, WHITESPACE)
-
-    children = []
-    while not source.startswith("{% endfor %}"):
-        source, child = expect_expression(source)
-        children.append(child)
-        source, _ = optional_regex(source, WHITESPACE)
-
-    source = expect_string(source, "{% endfor %}")
-
-    return source, ASTForBlock(iterator, iterable, children)
-
-
-def expect_if_block(source: str) -> tuple[str, ASTIfBlock]:
-    """An "if" control block."""
-    source = expect_string(source, "{% if ")
-    source, condition = expect_regex(source, IF_CONDITION, "if condition")
-    source = expect_string(source, " %}")
-
-    source, _ = optional_regex(source, WHITESPACE)
-
-    children = []
-    while not source.startswith("{% endif %}"):
-        source, child = expect_expression(source)
-        children.append(child)
-        source, _ = optional_regex(source, WHITESPACE)
-
-    source = expect_string(source, "{% endif %}")
-
-    if_block = ASTIfBlock(condition, children)
-    return source, if_block
-
-
-def expect_while_block(source: str) -> tuple[str, ASTWhileBlock]:
-    """A while-loop control block."""
-    source = expect_string(source, "{% while ")
-    source, condition = expect_regex(source, WHILE_CONDITION, "while condition")
-    source = expect_string(source, " %}")
-    source, _ = optional_regex(source, WHITESPACE)
-
-    children = []
-    while not source.startswith("{% endwhile %}"):
-        source, child = expect_expression(source)
-        children.append(child)
-        source, _ = optional_regex(source, WHITESPACE)
-
-    source = expect_string(source, "{% endwhile %}")
-
-    while_block = ASTWhileBlock(condition, children)
-    return source, while_block
-
-
 def expect_interpolation(source: str) -> tuple[str, ASTInterpolation]:
     """An interpolation block."""
-    source = expect_string(source, "{{ ")
+    source = expect_string(source, "{{")
+    source, _ = optional_regex(source, WHITESPACE)
     source, expression = expect_regex(source, INTERPOLATION_EXPRESSION, "expression")
-    source = expect_string(source, " }}")
+    source, _ = optional_regex(source, WHITESPACE)
+    source = expect_string(source, "}}")
     return source, ASTInterpolation(expression)
 
 

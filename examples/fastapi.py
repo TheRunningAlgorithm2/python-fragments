@@ -1,25 +1,23 @@
-from dataclasses import dataclass
-
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-
-@dataclass
-class Exercise:
-    id: int
-    name: str
-
-
-LIST = [
-    Exercise(0, "Bicep Curl"),
-    Exercise(1, "Bench Press"),
-    Exercise(2, "Lat Pulldown"),
-]
+from fragments.html import elements
 
 app = FastAPI()
 
 
-@app.get("/exercises/list", response_class=HTMLResponse)
-def ExerciseList():
-    exercise_names = [exercise.name for exercise in LIST]
-    return "test"
+@app.get("/component")
+async def component():
+    return HTMLResponse(
+        elements.sequence(
+            [
+                elements.el(
+                    "div",
+                    [elements.el("p", ["Hello"], style={"color": "red"})],
+                    classes=["test"],
+                    style={"background-color": "green"},
+                    attributes={"x-data": "{ test: 'test' }"},
+                ),
+            ]
+        )
+    )
