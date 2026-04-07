@@ -11,16 +11,16 @@ def test_full():
     assert fragment.children == [
         ASTHTMLElement(
             "div",
-            [ASTHTMLAttribute("classes", "flex flex-col gap-3", None)],
+            {"classes": ASTHTMLAttribute("classes", "flex flex-col gap-3", None)},
             [
                 ASTHTMLElement(
                     "div",
-                    [ASTHTMLAttribute("for", None, ASTInterpolation("item in user.items")), ASTHTMLAttribute("classes", "p-3 rounded-lg bg-gray-800", None)],
+                    {"for": ASTHTMLAttribute("for", None, ASTInterpolation("item in user.items")), "classes": ASTHTMLAttribute("classes", "p-3 rounded-lg bg-gray-800", None)},
                     [
-                        ASTHTMLElement("p", [ASTHTMLAttribute("style", None, ASTInterpolation('{"color": "red"}'))], [ASTInterpolation("item.name")], False),
-                        ASTHTMLElement("p", [ASTHTMLAttribute("if", None, ASTInterpolation("item.description"))], [ASTInterpolation("item.description")], False),
-                        ASTHTMLElement("p", [], [ASTHTMLText("This is an item")], False),
-                        ASTHTMLElement("input", [], [], True),
+                        ASTHTMLElement("p", {"style": ASTHTMLAttribute("style", None, ASTInterpolation('{"color": "red"}'))}, [ASTInterpolation("item.name")], False),
+                        ASTHTMLElement("p", {"if": ASTHTMLAttribute("if", None, ASTInterpolation("item.description"))}, [ASTInterpolation("item.description")], False),
+                        ASTHTMLElement("p", {}, [ASTHTMLText("This is an item")], False),
+                        ASTHTMLElement("input", {}, [], True),
                     ],
                     False,
                 )
