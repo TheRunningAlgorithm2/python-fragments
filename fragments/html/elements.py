@@ -23,7 +23,7 @@ def el(
     if oneline:
         return f"""<{tag_contents_string} />"""
 
-    children_string = "".join(children)
+    children_string = "".join(str(child) for child in children)
 
     return f"""<{tag_contents_string}>{children_string}</{name}>"""
 
