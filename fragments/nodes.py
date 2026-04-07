@@ -1,48 +1,45 @@
+import json
 from dataclasses import dataclass
-from typing import Protocol, Sequence
-
-from fragments.template import Python
-
-
-class ASTNode(Protocol):
-    def python(self, indent: int) -> Python: ...
+from typing import Sequence
 
 
 @dataclass
 class ASTFragment:
-    children: list[ASTNode]
+    children: list["ASTHTMLElement | ASTHTMLText | ASTInterpolation"]
 
-    def python(self, indent: int) -> Python:
-        python = Python(indent)
-        python.add('result = ""')
-        for child in self.children:
-            python.include(child.python(indent))
-        python.add("return result")
-        return python
+    __template__ = """sequence([{}])"""
+
+    def python(self) -> str:
+        return self.__template__.format(",".join(child.python() for child in self.children))
 
 
 @dataclass
 class ASTHTMLElement:
     name: str
-    attributes: list["ASTHTMLAttribute"]
+    attributes: dict[str, "ASTHTMLAttribute"]
     children: Sequence["ASTHTMLElement | ASTHTMLText | ASTInterpolation"]
     one_line: bool
 
-    def python(self, indent: int) -> Python:
-        python = Python(indent)
-        python.add(f'result += "<{self.name}"')
+    __for_template__ = """sequence([{} for {}])"""
+    __if_template__ = """{} if {} else ''"""
+    __element_template__ = """el("{}", [{}], {}, {})"""
 
-        for attribute in self.attributes:
-            python.add('result += " "')
-            python.include(attribute.python(indent))
+    def python(self) -> str:
+        if_attribute = self.attributes.pop("if") if "if" in self.attributes else None
+        for_attribute = self.attributes.pop("for") if "for" in self.attributes else None
 
-        python.add('result += ">"')
+        attributes = "{" + ",".join(attribute.python() for attribute in self.attributes.values()) + "}"
+        result = self.__element_template__.format(self.name, ",".join(child.python() for child in self.children), attributes, self.one_line)
 
-        for child in self.children:
-            python.include(child.python(indent))
+        if if_attribute is not None:
+            assert if_attribute.interpolation is not None
+            result = self.__if_template__.format(result, if_attribute.interpolation.python())
 
-        python.add(f'result += "</{self.name}>"')
-        return python
+        if for_attribute is not None:
+            assert for_attribute.interpolation is not None
+            result = self.__for_template__.format(result, for_attribute.interpolation.python())
+
+        return result
 
 
 @dataclass
@@ -51,74 +48,28 @@ class ASTHTMLAttribute:
     value: str | None
     interpolation: "ASTInterpolation | None"
 
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add(f'result += "{self.name}"')
+    __value_template__ = '"{}": "{}"'
+    __interpolation_template = '"{}": {}'
 
+    def python(self) -> str:
         if self.value is not None:
-            result.add(f'result += "=\\"{self.value}\\""')
-        elif self.interpolation is not None:
-            result.add(f'result += "=\\"{self.interpolation.expression}\\""')
-            result.include(self.interpolation.python(indent))
+            return self.__value_template__.format(self.name, self.value)
 
-        return result
+        assert self.interpolation is not None
+        return self.__interpolation_template.format(self.name, self.interpolation.python())
 
 
 @dataclass
 class ASTHTMLText:
     text: str
 
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add(f'result += "{self.text}"')
-        return result
-
-
-@dataclass
-class ASTForBlock:
-    iterator: str
-    iterable: str
-    children: list[ASTNode]
-
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add("for " + self.iterator + " in " + self.iterable + ":")
-        for child in self.children:
-            result.include(child.python(indent + 1))
-        return result
-
-
-@dataclass
-class ASTIfBlock:
-    condition: str
-    children: list[ASTNode]
-
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add("if " + self.condition + ":")
-        for child in self.children:
-            result.include(child.python(indent + 1))
-        return result
-
-
-@dataclass
-class ASTWhileBlock:
-    condition: str
-    children: list[ASTNode]
-
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add("while " + self.condition + ":")
-        for child in self.children:
-            result.include(child.python(indent + 1))
-        return result
+    def python(self) -> str:
+        return f'"{self.text}"'
 
 
 @dataclass
 class ASTInterpolation:
     expression: str
 
-    def python(self, indent: int) -> Python:
-        result = Python(indent)
-        result.add(f"result += {self.expression}")
-        return result
+    def python(self) -> str:
+        return self.expression

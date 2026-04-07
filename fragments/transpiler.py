@@ -9,13 +9,15 @@ def transpile(source: str) -> str:
     if python is not None:
         result = python
 
+    result = "from fragments.html.elements import el, sequence\n" + result
+
     while len(source) > 0:
-        if source.lstrip().startswith("return <>"):
-            spaces = len(source) - len(source.lstrip())
-            indent = spaces // 4
+        if source.lstrip().startswith("<>"):
+            source_before = source
             source = source.lstrip()
+            whitespace = source_before[: len(source_before) - len(source)]
             source, fragment = grammar.expect_fragment(source)
-            result += str(fragment.python(indent))
+            result += whitespace + fragment.python()
         else:
             source, python = grammar.expect_regex(source, grammar.PYTHON, "python source")
             result += python

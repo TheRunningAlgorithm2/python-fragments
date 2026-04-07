@@ -1,23 +1,16 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-from fragments.html import elements
-
 app = FastAPI()
 
 
-@app.get("/component")
+@app.get("/component", response_class=HTMLResponse)
 async def component():
-    return HTMLResponse(
-        elements.sequence(
-            [
-                elements.el(
-                    "div",
-                    [elements.el("p", ["Hello"], style={"color": "red"})],
-                    classes=["test"],
-                    style={"background-color": "green"},
-                    attributes={"x-data": "{ test: 'test' }"},
-                ),
-            ]
-        )
-    )
+    classes = ["test"]
+    style = {"background-color": "green"}
+    return <>
+        <div for={{ i in range(10) }} classes={{ classes }} style={{ style }} x-data="{ test: 'test' }">
+            <p style={{ {"color": "red"} }}>Hello</p>
+            <p if={{ i % 2 == 0 }}> Test</p>
+        </div>
+    </>
