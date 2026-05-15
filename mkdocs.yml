@@ -1,0 +1,28 @@
+site_name: Python Fragments
+repo_url: https://github.com/TheRunningAlgorithm2/python-fragments
+repo_name: Python Fragments
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    scheme: slate
+  features:
+    - search.suggest
+    - search.highlight
+    - search.share
+
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+
+extra_css:
+  - extras.css

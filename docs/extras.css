@@ -1,0 +1,9 @@
+/* Custom styles */
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #7bc24c;
+  --md-primary-fg-color--light: #96d66b;
+  --md-primary-fg-color--dark: #60a035;
+--md-accent-fg-color: #7bc24c;
+  --md-typeset-a-color: #7bc24c !important;
+}
