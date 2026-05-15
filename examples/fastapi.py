@@ -1,4 +1,4 @@
-import fragments.loader  # isort: skip
+from fragments import loader  # isort: skip
 from fastapi import FastAPI
 
 from examples.routes import router
