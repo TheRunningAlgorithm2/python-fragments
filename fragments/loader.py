@@ -29,5 +29,4 @@ class TranspilingFinder(importlib.abc.MetaPathFinder):
         return spec
 
 
-def init() -> None:
-    sys.meta_path.insert(0, TranspilingFinder())
+sys.meta_path.insert(0, TranspilingFinder())

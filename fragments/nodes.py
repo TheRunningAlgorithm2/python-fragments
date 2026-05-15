@@ -23,13 +23,18 @@ class ASTHTMLElement:
     __for_template__ = """sequence([{} for {}])"""
     __if_template__ = """{} if {} else ''"""
     __element_template__ = """el("{}", [{}], {}, {})"""
+    __function_template__ = """{}([{}], {})"""
 
     def python(self) -> str:
         if_attribute = self.attributes.pop("if") if "if" in self.attributes else None
         for_attribute = self.attributes.pop("for") if "for" in self.attributes else None
 
         attributes = "{" + ",".join(attribute.python() for attribute in self.attributes.values()) + "}"
-        result = self.__element_template__.format(self.name, ",".join(child.python() for child in self.children), attributes, self.one_line)
+
+        if self.name[0].capitalize() == self.name[0]:
+            result = self.__function_template__.format(self.name, ",".join(child.python() for child in self.children), attributes)
+        else:
+            result = self.__element_template__.format(self.name, ",".join(child.python() for child in self.children), attributes, self.one_line)
 
         if if_attribute is not None:
             assert if_attribute.interpolation is not None
