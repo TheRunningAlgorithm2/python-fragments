@@ -15,7 +15,7 @@ def _workspace_config(section: str) -> object:
     if section == "python":
         return {"pythonPath": sys.executable, "defaultInterpreterPath": sys.executable}
     if section in ("basedpyright", "basedpyright.analysis", "python.analysis"):
-        return {"typeCheckingMode": "basic", "openFilesOnly": True, "extraPaths": [_PROJECT_ROOT]}
+        return {"extraPaths": [_PROJECT_ROOT]}
     return None
 
 
@@ -63,9 +63,6 @@ async def _run(source: str, workspace: str | None = None, timeout: float = 15.0)
         pass
 
     client.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
-    if client._proc:
-        client._proc.terminate()
-        await client._proc.wait()
     return diagnostics
 
 

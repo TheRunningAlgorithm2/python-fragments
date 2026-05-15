@@ -23,3 +23,8 @@ fragments-lsp = "fragments.lsp.server:main"
 
 [tool.setuptools.packages.find]
 include = ["fragments*"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]

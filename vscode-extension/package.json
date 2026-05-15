@@ -11,6 +11,13 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "grammars": [
+      {
+        "path": "./syntaxes/fragments.tmLanguage.json",
+        "scopeName": "source.python.fragments",
+        "injectTo": ["source.python"]
+      }
+    ],
     "configuration": {
       "title": "Python Fragments",
       "properties": {

@@ -19,3 +19,13 @@ async def component() -> str:
             <MyComponent if={{ i % 2 == 0 }} />
         </div>
     </>
+
+
+@router.get("/component2", response_class=HTMLResponse)
+async def component2() -> str:
+    values = ["TestA", "TestB", "TestC"]
+    return <>
+        <div for={{ value in values }}>
+            {{ value }}
+        </div>
+    </>
