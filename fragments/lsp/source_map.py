@@ -13,6 +13,60 @@ class Segment:
     trans_end: int
 
 
+def to_offset(source: str, line: int, character: int) -> int:
+    lines = source.split("\n")
+    return sum(len(lines[i]) + 1 for i in range(line)) + character
+
+
+def to_position(source: str, offset: int) -> dict:
+    lines = source[:offset].split("\n")
+    return {"line": len(lines) - 1, "character": len(lines[-1])}
+
+
+def orig_to_trans(orig_offset: int, segments: list[Segment]) -> int | None:
+    orig_cursor = 0
+    trans_cursor = len(IMPORT_PREFIX)
+
+    for seg in segments:
+        gap = seg.orig_start - orig_cursor
+        if orig_offset < orig_cursor + gap:
+            return trans_cursor + (orig_offset - orig_cursor)
+        orig_cursor += gap
+        trans_cursor += gap
+
+        frag_orig = seg.orig_end - seg.orig_start
+        if orig_offset < orig_cursor + frag_orig:
+            return None
+        orig_cursor += frag_orig
+        trans_cursor += seg.trans_end - seg.trans_start
+
+    return trans_cursor + (orig_offset - orig_cursor)
+
+
+def trans_to_orig(trans_offset: int, segments: list[Segment]) -> int | None:
+    prefix = len(IMPORT_PREFIX)
+    if trans_offset < prefix:
+        return None
+
+    orig_cursor = 0
+    trans_cursor = prefix
+
+    for seg in segments:
+        gap = seg.trans_start - trans_cursor
+        if trans_offset < trans_cursor + gap:
+            return orig_cursor + (trans_offset - trans_cursor)
+        orig_cursor += gap
+        trans_cursor += gap
+
+        frag_trans = seg.trans_end - seg.trans_start
+        if trans_offset < trans_cursor + frag_trans:
+            return None
+        orig_cursor += seg.orig_end - seg.orig_start
+        trans_cursor += frag_trans
+
+    return orig_cursor + (trans_offset - trans_cursor)
+
+
 def transpile_with_map(source: str) -> tuple[str, list[Segment]]:
     source, python = grammar.optional_regex(source, grammar.PYTHON)
     result = ""

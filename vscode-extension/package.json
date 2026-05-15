@@ -1,0 +1,37 @@
+{
+  "name": "python-fragments",
+  "displayName": "Python Fragments",
+  "description": "LSP support for the Python Fragments transpiler",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Python Fragments",
+      "properties": {
+        "fragments.serverPath": {
+          "type": "string",
+          "default": "fragments-lsp",
+          "description": "Path to the fragments-lsp executable. Defaults to fragments-lsp on PATH."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . --watch"
+  }
+}

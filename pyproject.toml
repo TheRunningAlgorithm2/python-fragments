@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fragments"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+lsp = [
+    "basedpyright>=1.39.0",
+    "pygls>=1.3.0",
+]
+dev = [
+    "pytest>=8.4.1",
+]
+
+[project.scripts]
+fragments = "fragments.cli:main"
+fragments-lsp = "fragments.lsp.server:main"
+
+[tool.setuptools.packages.find]
+include = ["fragments*"]
