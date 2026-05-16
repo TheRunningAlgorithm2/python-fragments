@@ -135,4 +135,4 @@ pip install python-fragments[lsp]
 
 A **VS Code extension** is included with structural syntax highlighting, semantic tokens, diagnostics, go-to-definition, rename, and more.
 
-[Full IDE setup guide](ide-tooling.md)
+[Full IDE setup guide](ide-tooling/vs-code.md)

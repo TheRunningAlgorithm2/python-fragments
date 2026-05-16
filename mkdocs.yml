@@ -34,7 +34,9 @@ nav:
   - Transpiler: transpiler.md
   - Getting Started:
     - Installation: installation.md
-    - IDE Tooling: ide-tooling.md
+    - IDEs & Tooling:
+      - VS Code: ide-tooling/vs-code.md
+      - LSP: ide-tooling/lsp.md
   - Syntax:
     - Fragments: syntax/fragments.md
     - Attributes: syntax/attributes.md
