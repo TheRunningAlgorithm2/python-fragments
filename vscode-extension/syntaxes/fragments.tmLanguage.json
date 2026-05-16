@@ -51,10 +51,19 @@
       ]
     },
     "interpolation": {
-      "begin": "\\{\\{",
-      "end": "\\}\\}",
-      "beginCaptures": { "0": { "name": "punctuation.section.embedded.fragment" } },
-      "endCaptures": { "0": { "name": "punctuation.section.embedded.fragment" } }
+      "begin": "(\\{)(\\{)",
+      "end": "(\\})(\\})",
+      "beginCaptures": {
+        "1": { "name": "punctuation.section.embedded.fragment" },
+        "2": { "name": "punctuation.section.embedded.fragment" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.section.embedded.fragment" },
+        "2": { "name": "punctuation.section.embedded.fragment" }
+      },
+      "patterns": [
+        { "include": "source.python" }
+      ]
     }
   }
 }
