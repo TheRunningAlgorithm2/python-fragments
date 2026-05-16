@@ -2,16 +2,39 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
+const path = require("path");
 const vscode = require("vscode");
+const python_extension_1 = require("@vscode/python-extension");
 const node_1 = require("vscode-languageclient/node");
 let client;
-function activate(context) {
-    const config = vscode.workspace.getConfiguration("fragments");
-    const serverPath = config.get("serverPath", "fragments-lsp");
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+async function checkPylanceConflict() {
+    const languageServer = vscode.workspace.getConfiguration("python").get("languageServer");
+    if (languageServer === "None")
+        return;
+    const choice = await vscode.window.showWarningMessage("Python Fragments detected an active Python language server that will conflict with it. Would you like to disable it?", "Yes", "No");
+    if (choice === "Yes") {
+        await vscode.workspace.getConfiguration("python").update("languageServer", "None", vscode.ConfigurationTarget.Workspace);
+    }
+}
+async function restart(workspaceFolder, pythonApi) {
+    if (client) {
+        await client.stop();
+        client = undefined;
+    }
+    const override = vscode.workspace.getConfiguration("fragments").get("serverPath");
+    let serverPath;
+    if (override) {
+        serverPath = override;
+    }
+    else {
+        const envPath = pythonApi.environments.getActiveEnvironmentPath(workspaceFolder?.uri);
+        if (!envPath?.path)
+            return;
+        serverPath = path.join(path.dirname(envPath.path), "fragments-lsp");
+    }
     const serverOptions = {
         command: serverPath,
-        options: { cwd: workspaceRoot },
+        options: { cwd: workspaceFolder?.uri.fsPath },
     };
     const clientOptions = {
         documentSelector: [{ scheme: "file", language: "python" }],
@@ -19,6 +42,14 @@ function activate(context) {
     };
     client = new node_1.LanguageClient("python-fragments", "Python Fragments", serverOptions, clientOptions);
     client.start();
+}
+function activate(context) {
+    checkPylanceConflict();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    python_extension_1.PythonExtension.api().then((pythonApi) => {
+        restart(workspaceFolder, pythonApi);
+        context.subscriptions.push(pythonApi.environments.onDidChangeActiveEnvironmentPath(() => restart(workspaceFolder, pythonApi)));
+    });
 }
 function deactivate() {
     return client?.stop();

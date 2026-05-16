@@ -15,7 +15,9 @@
       {
         "path": "./syntaxes/fragments.tmLanguage.json",
         "scopeName": "source.python.fragments",
-        "injectTo": ["source.python"]
+        "injectTo": [
+          "source.python"
+        ]
       }
     ],
     "configuration": {
@@ -23,13 +25,13 @@
       "properties": {
         "fragments.serverPath": {
           "type": "string",
-          "default": "fragments-lsp",
-          "description": "Path to the fragments-lsp executable. Defaults to fragments-lsp on PATH."
+          "description": "Override path to the fragments-lsp executable. By default, derived from the active Python interpreter selected in the Python extension."
         }
       }
     }
   },
   "dependencies": {
+    "@vscode/python-extension": "^1.0.5",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {

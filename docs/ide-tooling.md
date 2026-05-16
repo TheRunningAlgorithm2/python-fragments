@@ -31,6 +31,10 @@ fragments-lsp
 
 ## VS Code
 
+Install the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and select the interpreter for the environment where `python-fragments[lsp]` is installed. The extension will automatically start `fragments-lsp` from that environment.
+
+If a conflicting Python language server (such as Pylance) is active, the extension will prompt you to disable it on first activation.
+
 Install the extension from the `vscode-extension/` directory:
 
 ```bash
@@ -45,4 +49,4 @@ Then open the folder in VS Code and press `F5` to launch a development host, or 
 
 | Setting | Default | Description |
 |---|---|---|
-| `fragments.serverPath` | `fragments-lsp` | Path to the `fragments-lsp` executable. Override if it is not on your `PATH`. |
+| `fragments.serverPath` | _(derived from active interpreter)_ | Override path to the `fragments-lsp` executable. Only needed if auto-detection fails. |

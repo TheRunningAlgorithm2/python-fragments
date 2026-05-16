@@ -2,18 +2,88 @@
 
 **Modern HTML template rendering in Python** - no build step, no template files, and native HTML awareness out of the box.
 
-```python
-def profile_page(user):
-    style = {"color": "red" if user.is_admin else "blue"}
-    return <>
-        <h1 style={{ style }}>Hello, {{ user.username }}!</h1>
-        <ul>
-            <li for={{ post in user.recent_posts }}>
-                {{ post.title }}
-            </li>
-        </ul>
-    </>
-```
+=== "Plain Python"
+
+    ```python
+    from fragments import loader  # isort: skip
+
+    from my_components import Layout, PostCard
+
+    POSTS = [...]  # your data here
+
+    def render_index() -> str:
+        published = [p for p in POSTS if p.published]
+        return <>
+            <Layout title="My Blog">
+                <h1>Latest Posts</h1>
+                <PostCard for={{ post in published }} post={{ post }} />
+            </Layout>
+        </>
+    ```
+
+=== "FastAPI"
+
+    ```python
+    from fragments import loader  # isort: skip
+
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse
+
+    app = FastAPI()
+
+    POSTS = [...]  # your data here
+
+    @app.get("/", response_class=HTMLResponse)
+    async def index() -> str:
+        published = [p for p in POSTS if p.published]
+        return <>
+            <Layout title="My Blog">
+                <h1>Latest Posts</h1>
+                <PostCard for={{ post in published }} post={{ post }} />
+            </Layout>
+        </>
+    ```
+
+=== "Flask"
+
+    ```python
+    from fragments import loader  # isort: skip
+
+    from flask import Flask
+
+    app = Flask(__name__)
+
+    POSTS = [...]  # your data here
+
+    @app.route("/")
+    def index() -> str:
+        published = [p for p in POSTS if p.published]
+        return <>
+            <Layout title="My Blog">
+                <h1>Latest Posts</h1>
+                <PostCard for={{ post in published }} post={{ post }} />
+            </Layout>
+        </>
+    ```
+
+=== "Django"
+
+    ```python
+    from fragments import loader  # isort: skip
+
+    from django.http import HttpRequest, HttpResponse
+
+    POSTS = [...]  # your data here
+
+    def index(request: HttpRequest) -> HttpResponse:
+        published = [p for p in POSTS if p.published]
+        return HttpResponse(<>
+            <Layout title="My Blog">
+                <h1>Latest Posts</h1>
+                <PostCard for={{ post in published }} post={{ post }} />
+            </Layout>
+        </>)
+    ```
 
 ---
 
