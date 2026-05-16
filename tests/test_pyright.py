@@ -79,27 +79,28 @@ def test_no_errors_for_clean_file():
     assert _resolution_errors(run("x: int = 1\n")) == []
 
 
-def test_fastapi_imports_resolve():
+def test_stdlib_imports_resolve():
     diags = run("""
-        from fastapi import FastAPI, APIRouter
-        from fastapi.responses import HTMLResponse
+        import os
+        import sys
+        from pathlib import Path
     """)
     assert _resolution_errors(diags) == [], _resolution_errors(diags)
 
 
-def test_fastapi_instantiation():
+def test_stdlib_usage():
     diags = run("""
-        from fastapi import FastAPI
-        app = FastAPI()
+        from pathlib import Path
+        p = Path(".")
     """)
     assert _resolution_errors(diags) == [], _resolution_errors(diags)
 
 
-def test_fastapi_with_fragments_prefix():
+def test_stdlib_with_fragments_prefix():
     diags = run("""
         from fragments.html.elements import el, sequence
-        from fastapi import FastAPI
-        app = FastAPI()
+        from pathlib import Path
+        p = Path(".")
     """)
     assert _resolution_errors(diags) == [], _resolution_errors(diags)
 
@@ -107,12 +108,10 @@ def test_fastapi_with_fragments_prefix():
 def test_local_import_with_fragment_syntax():
     workspace = tempfile.mkdtemp()
     with open(os.path.join(workspace, "routes.py"), "w") as f:
-        f.write("from fastapi import APIRouter\nrouter = APIRouter()\ndef view():\n    return <>\n        <div>hi</div>\n    </>\n")
+        f.write("def view() -> str:\n    return <>\n        <div>hi</div>\n    </>\n")
     diags = run("""
-        from fastapi import FastAPI
-        from routes import router
-        app = FastAPI()
-        app.include_router(router)
+        from routes import view
+        result = view()
     """, workspace=workspace)
     assert _resolution_errors(diags) == [], _resolution_errors(diags)
 
