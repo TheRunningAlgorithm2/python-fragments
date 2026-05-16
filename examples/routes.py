@@ -5,16 +5,16 @@ from layouts import Base
 
 router = APIRouter()
 
-views: int = 0
+view_count: int = 0
 
 
 @router.get("/", response_class=HTMLResponse)
 async def page() -> str:
-    global views
-    views += 1
+    global view_count
+    view_count += 1
     return <>
         <Base title="Test" header="Test Header">
             <p>View Count:</p>
-            <p>{{ views }}</p>
+            <p>{{ view_count }}</p>
         </Base>
     </>

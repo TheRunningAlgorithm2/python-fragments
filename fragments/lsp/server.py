@@ -156,6 +156,38 @@ def _remap_range(range_: dict, state: _FileState) -> dict | None:
 _converter = get_converter()
 
 
+def _remap_text_edits(text_edits: list[dict], state: _FileState) -> list[dict]:
+    return [
+        {**text_edit, "range": remapped}
+        for text_edit in text_edits
+        if (remapped := _remap_range(text_edit["range"], state)) is not None
+    ]
+
+
+def _remap_workspace_edit(edit: dict, files: dict[str, _FileState]) -> dict:
+    result = dict(edit)
+
+    if changes := edit.get("changes"):
+        result["changes"] = {
+            uri: _remap_text_edits(text_edits, state) if (state := files.get(uri)) is not None else text_edits
+            for uri, text_edits in changes.items()
+        }
+
+    if document_changes := edit.get("documentChanges"):
+        remapped_doc_changes = []
+        for doc_edit in document_changes:
+            if "kind" in doc_edit:
+                remapped_doc_changes.append(doc_edit)
+                continue
+            uri = doc_edit["textDocument"]["uri"]
+            state = files.get(uri)
+            edits = _remap_text_edits(doc_edit["edits"], state) if state is not None else doc_edit["edits"]
+            remapped_doc_changes.append({**doc_edit, "edits": edits})
+        result["documentChanges"] = remapped_doc_changes
+
+    return result
+
+
 def _remap_completion_items(items: list[dict], state: _FileState) -> list[dict]:
     output = []
     for item in items:
@@ -203,6 +235,7 @@ async def initialized(language_server: FragmentsServer, _params: types.Initializ
                     "workspace": {"configuration": True},
                     "textDocument": {
                         "hover": {"contentFormat": ["markdown", "plaintext"]},
+                        "rename": {"prepareSupport": True},
                         "semanticTokens": {
                             "requests": {"full": True},
                             "tokenTypes": _TOKEN_TYPES,
@@ -344,6 +377,120 @@ async def completion(
 
     items = [_converter.structure(item, types.CompletionItem) for item in _remap_completion_items(raw_items, state)]
     return types.CompletionList(is_incomplete=is_incomplete, items=items)
+
+
+@server.feature(types.TEXT_DOCUMENT_DEFINITION)
+async def definition(
+    language_server: FragmentsServer, params: types.DefinitionParams
+) -> list[types.Location] | None:
+    if language_server._pyright is None:
+        return None
+
+    uri = params.text_document.uri
+    state = language_server._files.get(uri)
+    if state is None:
+        return None
+
+    position = params.position
+    orig_offset = _to_offset(state.orig_line_starts, position.line, position.character)
+    trans_offset = orig_to_trans(orig_offset, state.segments)
+    if trans_offset is None:
+        return None
+
+    trans_pos = _to_position(state.trans_line_starts, trans_offset)
+    result = await language_server._pyright.request(
+        "textDocument/definition",
+        {"textDocument": {"uri": uri}, "position": trans_pos},
+    )
+
+    definition_result = result.get("result")
+    if not definition_result:
+        return None
+
+    locations = [definition_result] if isinstance(definition_result, dict) else definition_result
+
+    output = []
+    for loc in locations:
+        target_state = language_server._files.get(loc["uri"])
+        if target_state is not None:
+            remapped = _remap_range(loc["range"], target_state)
+            if remapped is None:
+                continue
+            loc = {**loc, "range": remapped}
+        output.append(_converter.structure(loc, types.Location))
+
+    return output or None
+
+
+@server.feature(types.TEXT_DOCUMENT_PREPARE_RENAME)
+async def prepare_rename(
+    language_server: FragmentsServer, params: types.PrepareRenameParams
+) -> types.Range | None:
+    if language_server._pyright is None:
+        return None
+
+    uri = params.text_document.uri
+    state = language_server._files.get(uri)
+    if state is None:
+        return None
+
+    position = params.position
+    orig_offset = _to_offset(state.orig_line_starts, position.line, position.character)
+    trans_offset = orig_to_trans(orig_offset, state.segments)
+    if trans_offset is None:
+        return None
+
+    trans_pos = _to_position(state.trans_line_starts, trans_offset)
+    result = await language_server._pyright.request(
+        "textDocument/prepareRename",
+        {"textDocument": {"uri": uri}, "position": trans_pos},
+    )
+
+    prepare_result = result.get("result")
+    if not prepare_result:
+        return None
+
+    # Normalise to a plain Range (discard placeholder / defaultBehavior variants)
+    range_ = prepare_result.get("range", prepare_result) if isinstance(prepare_result, dict) else prepare_result
+    if not isinstance(range_, dict) or "start" not in range_:
+        return None
+
+    remapped = _remap_range(range_, state)
+    if remapped is None:
+        return None
+
+    return _converter.structure(remapped, types.Range)
+
+
+@server.feature(types.TEXT_DOCUMENT_RENAME)
+async def rename(
+    language_server: FragmentsServer, params: types.RenameParams
+) -> types.WorkspaceEdit | None:
+    if language_server._pyright is None:
+        return None
+
+    uri = params.text_document.uri
+    state = language_server._files.get(uri)
+    if state is None:
+        return None
+
+    position = params.position
+    orig_offset = _to_offset(state.orig_line_starts, position.line, position.character)
+    trans_offset = orig_to_trans(orig_offset, state.segments)
+    if trans_offset is None:
+        return None
+
+    trans_pos = _to_position(state.trans_line_starts, trans_offset)
+    result = await language_server._pyright.request(
+        "textDocument/rename",
+        {"textDocument": {"uri": uri}, "position": trans_pos, "newName": params.new_name},
+    )
+
+    rename_result = result.get("result")
+    if not rename_result:
+        return None
+
+    return _converter.structure(_remap_workspace_edit(rename_result, language_server._files), types.WorkspaceEdit)
 
 
 _TOKEN_TYPES = [

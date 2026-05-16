@@ -100,7 +100,7 @@
   </div>
   <div class="feature-card">
     <strong>Full IDE support</strong>
-    <p>Type checking, hover, completions, and semantic highlighting via a built-in language server and VS Code extension.</p>
+    <p>Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.</p>
   </div>
 </div>
 
@@ -133,6 +133,6 @@ Install the language server for inline type errors, completions, and hover docs:
 pip install python-fragments[lsp]
 ```
 
-A **VS Code extension** is included with structural syntax highlighting, semantic tokens, diagnostics, and more.
+A **VS Code extension** is included with structural syntax highlighting, semantic tokens, diagnostics, go-to-definition, rename, and more.
 
 [Full IDE setup guide](ide-tooling.md)

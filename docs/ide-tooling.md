@@ -9,12 +9,12 @@ Python Fragments ships a language server and VS Code extension that provide full
 - **Completions** — attribute, method, and name completions including trigger-on-dot
 - **Semantic tokens** — type-aware syntax highlighting for Python code inside fragments
 - **Syntax highlighting** — structural highlighting for `<>`, tags, and `{{ }}` interpolations
+- **Go-to-definition** — jump to the definition of a symbol
+- **Rename** — rename a symbol across all files in the workspace
 
 Not yet implemented:
 
-- **Go-to-definition** — jump to the definition of a symbol
 - **Find references** — list all usages of a symbol
-- **Rename** — rename a symbol across the file
 - **Fragments-specific syntax** — autocompletion and syntax highlighting for fragments blocks
 
 ## Install the LSP
