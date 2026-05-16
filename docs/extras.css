@@ -4,6 +4,34 @@
   --md-primary-fg-color: #7bc24c;
   --md-primary-fg-color--light: #96d66b;
   --md-primary-fg-color--dark: #60a035;
---md-accent-fg-color: #7bc24c;
+  --md-accent-fg-color: #7bc24c;
   --md-typeset-a-color: #7bc24c !important;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.feature-card {
+  padding: 1.25rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  background: var(--md-code-bg-color);
+}
+
+.feature-card strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  color: var(--md-primary-fg-color);
+}
+
+.feature-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--md-default-fg-color--light);
 }

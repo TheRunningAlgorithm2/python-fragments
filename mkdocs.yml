@@ -26,3 +26,16 @@ markdown_extensions:
 
 extra_css:
   - extras.css
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: installation.md
+    - IDE Tooling: ide-tooling.md
+  - Syntax:
+    - Fragments: syntax/fragments.md
+    - Attributes: syntax/attributes.md
+    - Control Flow: syntax/control-flow.md
+    - Components: syntax/components.md
+  - Examples:
+    - FastAPI: examples/fastapi.md
