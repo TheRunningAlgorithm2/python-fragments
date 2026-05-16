@@ -4,12 +4,12 @@ Any Python function can be used as a component. Components are distinguished fro
 
 ## Defining a component
 
-A component is a plain Python function that returns a fragment:
+A component is a plain Python function that returns a fragment. Attributes passed on the tag become keyword arguments — declare them explicitly or accept them all with `**kwargs`:
 
 ```python
-def Card(children: list[str], attributes: dict) -> str:
+def Card(children: list[str], classes: str = "") -> str:
     return <>
-        <div classes="card">
+        <div classes={{ classes }}>
             {{ children }}
         </div>
     </>
@@ -27,7 +27,7 @@ return <>
 </>
 ```
 
-Children are passed as the first argument, and any attributes are passed as the second:
+Attributes on the tag are forwarded as keyword arguments to the function:
 
 ```python
 <Card classes="featured">

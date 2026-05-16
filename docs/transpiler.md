@@ -46,7 +46,7 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return sequence([el("h1", ["Hello, world!"], {}, False),el("p", ["Welcome to Fragments."], {}, False)])
+    return sequence([el("h1",["Hello, world!"],oneline=False,),el("p",["Welcome to Fragments."],oneline=False,)])
 ```
 
 **Endpoint return value** - A plain Python string
@@ -64,18 +64,18 @@ The transpiler does two things:
 
 Fragments are translated into runtime functions from our HTML library `fragments.html`, this is how our native HTML awareness works:
 
-**`el(name, children, attributes, oneline)`** builds a single HTML element.
+**`el(name, children, oneline, **attributes)`** builds a single HTML element.
 
 | Argument | Type | Purpose |
 |---|---|---|
 | `name` | `str` | The tag name (`"h1"`, `"div"`, …) |
 | `children` | `list[str]` | Rendered inner content |
-| `attributes` | `dict[str, Any]` | HTML attributes |
 | `oneline` | `bool` | `True` for self-closing tags (`/>`) |
+| `**attributes` | `Any` | HTML attributes passed as keyword arguments |
 
 **`sequence(children)`** concatenates a list of rendered strings into one — it is what `<> ... </>` compiles to at the top level.
 
-For the simple example above, at runtime `el("h1", ["Hello, world!"], {}, False)` produces the string `<h1>Hello, world!</h1>`, and `sequence([...])` joins both elements into the final HTML response.
+For the simple example above, at runtime `el("h1",["Hello, world!"],oneline=False,)` produces the string `<h1>Hello, world!</h1>`, and `sequence([...])` joins both elements into the final HTML response.
 
 ## Dynamic content — `for` and `if`
 
@@ -102,7 +102,7 @@ async def post_list() -> str:
 @app.get("/posts", response_class=HTMLResponse)
 async def post_list() -> str:
     posts = get_posts()
-    return sequence([el("h1", ["Posts"], {}, False),sequence([el("article", [el("h2", [post.title], {}, False),el("p", [post.summary], {}, False)], {}, False) for post in posts])])
+    return sequence([el("h1",["Posts"],oneline=False,),sequence([el("article",[el("h2",[post.title],oneline=False,),el("p",[post.summary],oneline=False,)],oneline=False,) for post in posts])])
 ```
 
 **Result** (with two posts in the list):
@@ -117,7 +117,7 @@ Similarly, `if={{ condition }}` compiles to a Python ternary: `el(...) if condit
 
 ## Components — uppercase tags
 
-A tag whose name starts with an uppercase letter is treated as a **component call** rather than an HTML element. The tag name is used directly as a function reference, and the element's children and attributes are passed as the first two arguments.
+A tag whose name starts with an uppercase letter is treated as a **component call** rather than an HTML element. The tag name is used directly as a function reference, and the element's children and attributes are passed as arguments.
 
 **Before:**
 
@@ -133,7 +133,17 @@ return <>
 **After:**
 
 ```python
-return sequence([Layout([el("h1", ["Posts"], {}, False),sequence([PostCard([], {"post": post}) for post in posts])], {"title": "My Blog"})])
+return sequence([Layout([el("h1",["Posts"],oneline=False,),sequence([PostCard([],post=post) for post in posts])],title="My Blog")])
 ```
 
-`Layout(children, attributes)` and `PostCard(children, attributes)` are ordinary Python functions — the transpiler just calls them. This means components get full type checking, refactoring support, and IDE completions with no extra tooling.
+`Layout` and `PostCard` are ordinary Python functions — the transpiler just calls them with children as the first positional argument and tag attributes as keyword arguments. How those kwargs are received is up to the component:
+
+```python
+# Accept any attributes with **kwargs
+def Layout(children: list[str], **kwargs: Any) -> str: ...
+
+# Or declare each attribute explicitly for type checking
+def PostCard(children: list[str], post: Post) -> str: ...
+```
+
+Explicit parameters give you full type checking, refactoring support, and IDE completions with no extra tooling.

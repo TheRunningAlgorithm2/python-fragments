@@ -37,8 +37,7 @@ Two components: a full-page layout wrapper, and a post card used in the listing.
 from typing import Any
 from models import Post
 
-def Layout(children: list[str], attributes: dict[str, Any]) -> str:
-    title = attributes.get("title", "My Blog")
+def Layout(children: list[str], title: str = "My Blog") -> str:
     return <>
         <html lang="en">
             <head>
@@ -59,8 +58,7 @@ def Layout(children: list[str], attributes: dict[str, Any]) -> str:
     </>
 
 
-def PostCard(children: list[str], attributes: dict[str, Any]) -> str:
-    post: Post = attributes["post"]
+def PostCard(children: list[str], post: Post) -> str:
     return <>
         <article classes="post-card">
             <h2>
@@ -72,7 +70,7 @@ def PostCard(children: list[str], attributes: dict[str, Any]) -> str:
     </>
 ```
 
-`Layout` receives `title` from its attributes and `children` from whatever is nested inside `<Layout>...</Layout>`. `PostCard` pulls the `Post` object from its attributes — it ignores `children` since it's always self-closing.
+`Layout` receives `title` as a keyword argument and `children` from whatever is nested inside `<Layout>...</Layout>`. `PostCard` declares `post` explicitly as a typed parameter — it ignores `children` since it's always self-closing.
 
 ## routes.py
 

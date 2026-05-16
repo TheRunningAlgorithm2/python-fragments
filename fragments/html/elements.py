@@ -8,8 +8,8 @@ def sequence(children: list[str]) -> str:
 def el(
     name: str,
     children: list[str],
-    attributes: dict[str, Any],
     oneline: bool,
+    **attributes: dict[str, Any],
 ) -> str:
     tag_contents = [
         name,

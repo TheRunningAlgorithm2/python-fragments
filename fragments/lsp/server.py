@@ -20,8 +20,8 @@ from fragments.lsp.source_map import (
 
 def _build_line_starts(source: str) -> list[int]:
     starts = [0]
-    for i, c in enumerate(source):
-        if c == "\n":
+    for i, character in enumerate(source):
+        if character == "\n":
             starts.append(i + 1)
     return starts
 
@@ -58,13 +58,13 @@ class FragmentsServer(LanguageServer):
         self._pyright: PyrightClient | None = None
         self._files: dict[str, _FileState] = {}
 
-    def _on_pyright_notification(self, msg: dict) -> None:
-        if msg.get("method") == "textDocument/publishDiagnostics":
-            asyncio.ensure_future(self._publish_diagnostics(msg["params"]))
+    def _on_pyright_notification(self, message: dict) -> None:
+        if message.get("method") == "textDocument/publishDiagnostics":
+            asyncio.ensure_future(self._publish_diagnostics(message["params"]))
 
-    async def _on_pyright_request(self, msg: dict) -> object:
-        if msg["method"] == "workspace/configuration":
-            items = msg["params"]["items"]
+    async def _on_pyright_request(self, message: dict) -> object:
+        if message["method"] == "workspace/configuration":
+            items = message["params"]["items"]
             editor_configs = await self.get_configuration_async(
                 types.ConfigurationParams(items=[
                     types.ConfigurationItem(scope_uri=item.get("scopeUri"), section=item.get("section", ""))
@@ -83,27 +83,27 @@ class FragmentsServer(LanguageServer):
         uri = params["uri"]
         state = self._files.get(uri)
         diagnostics = []
-        for d in params["diagnostics"]:
+        for diagnostic in params["diagnostics"]:
             if state is not None:
-                d = _map_diagnostic(d, state)
-                if d is None:
+                diagnostic = _map_diagnostic(diagnostic, state)
+                if diagnostic is None:
                     continue
             diagnostics.append(
                 types.Diagnostic(
                     range=types.Range(
                         start=types.Position(
-                            line=d["range"]["start"]["line"],
-                            character=d["range"]["start"]["character"],
+                            line=diagnostic["range"]["start"]["line"],
+                            character=diagnostic["range"]["start"]["character"],
                         ),
                         end=types.Position(
-                            line=d["range"]["end"]["line"],
-                            character=d["range"]["end"]["character"],
+                            line=diagnostic["range"]["end"]["line"],
+                            character=diagnostic["range"]["end"]["character"],
                         ),
                     ),
-                    message=d["message"],
-                    severity=types.DiagnosticSeverity(d["severity"]) if d.get("severity") is not None else None,
-                    code=d.get("code"),
-                    source=d.get("source"),
+                    message=diagnostic["message"],
+                    severity=types.DiagnosticSeverity(diagnostic["severity"]) if diagnostic.get("severity") is not None else None,
+                    code=diagnostic.get("code"),
+                    source=diagnostic.get("source"),
                 )
             )
         self.publish_diagnostics(uri, diagnostics)
@@ -156,42 +156,42 @@ def _remap_range(range_: dict, state: _FileState) -> dict | None:
 _converter = get_converter()
 
 
-def _remap_completion_items(items: list, state: _FileState) -> list:
-    out = []
+def _remap_completion_items(items: list[dict], state: _FileState) -> list[dict]:
+    output = []
     for item in items:
         item = dict(item)
         if "textEdit" in item:
-            te = item["textEdit"]
-            if "range" in te:
-                r = _remap_range(te["range"], state)
-                if r is None:
+            text_edit = item["textEdit"]
+            if "range" in text_edit:
+                remapped_range = _remap_range(text_edit["range"], state)
+                if remapped_range is None:
                     continue
-                item["textEdit"] = {**te, "range": r}
+                item["textEdit"] = {**text_edit, "range": remapped_range}
             else:
-                insert = _remap_range(te["insert"], state)
-                replace = _remap_range(te["replace"], state)
+                insert = _remap_range(text_edit["insert"], state)
+                replace = _remap_range(text_edit["replace"], state)
                 if insert is None or replace is None:
                     continue
-                item["textEdit"] = {**te, "insert": insert, "replace": replace}
+                item["textEdit"] = {**text_edit, "insert": insert, "replace": replace}
         if "additionalTextEdits" in item:
             item["additionalTextEdits"] = [
-                {**e, "range": r}
-                for e in item["additionalTextEdits"]
-                if (r := _remap_range(e["range"], state)) is not None
+                {**edit, "range": remapped_range}
+                for edit in item["additionalTextEdits"]
+                if (remapped_range := _remap_range(edit["range"], state)) is not None
             ]
-        out.append(item)
-    return out
+        output.append(item)
+    return output
 
 
 @server.feature(types.INITIALIZED)
-async def initialized(ls: FragmentsServer, _params: types.InitializedParams) -> None:
-    root_uri = ls.workspace.root_uri
+async def initialized(language_server: FragmentsServer, _params: types.InitializedParams) -> None:
+    root_uri = language_server.workspace.root_uri
     workspace_folders = [
-        {"uri": f.uri, "name": f.name} for f in ls.workspace.folders.values()
+        {"uri": folder.uri, "name": folder.name} for folder in language_server.workspace.folders.values()
     ]
 
-    pyright = PyrightClient(ls._on_pyright_notification, ls._on_pyright_request)
-    ls._pyright = pyright
+    pyright = PyrightClient(language_server._on_pyright_notification, language_server._on_pyright_request)
+    language_server._pyright = pyright
     await pyright.start()
     await pyright.request(
         "initialize",
@@ -217,13 +217,13 @@ async def initialized(ls: FragmentsServer, _params: types.InitializedParams) -> 
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_OPEN)
-def did_open(ls: FragmentsServer, params: types.DidOpenTextDocumentParams) -> None:
+def did_open(language_server: FragmentsServer, params: types.DidOpenTextDocumentParams) -> None:
     doc = params.text_document
     transpiled, segments = transpile_with_map(doc.text)
-    ls._files[doc.uri] = _FileState(doc.text, transpiled, segments)
+    language_server._files[doc.uri] = _FileState(doc.text, transpiled, segments)
 
-    if ls._pyright:
-        ls._pyright.notify(
+    if language_server._pyright:
+        language_server._pyright.notify(
             "textDocument/didOpen",
             {
                 "textDocument": {
@@ -237,14 +237,14 @@ def did_open(ls: FragmentsServer, params: types.DidOpenTextDocumentParams) -> No
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls: FragmentsServer, params: types.DidChangeTextDocumentParams) -> None:
+def did_change(language_server: FragmentsServer, params: types.DidChangeTextDocumentParams) -> None:
     uri = params.text_document.uri
     text = params.content_changes[-1].text
     transpiled, segments = transpile_with_map(text)
-    ls._files[uri] = _FileState(text, transpiled, segments)
+    language_server._files[uri] = _FileState(text, transpiled, segments)
 
-    if ls._pyright:
-        ls._pyright.notify(
+    if language_server._pyright:
+        language_server._pyright.notify(
             "textDocument/didChange",
             {
                 "textDocument": {"uri": uri, "version": params.text_document.version},
@@ -254,32 +254,32 @@ def did_change(ls: FragmentsServer, params: types.DidChangeTextDocumentParams) -
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CLOSE)
-def did_close(ls: FragmentsServer, params: types.DidCloseTextDocumentParams) -> None:
+def did_close(language_server: FragmentsServer, params: types.DidCloseTextDocumentParams) -> None:
     uri = params.text_document.uri
-    ls._files.pop(uri, None)
+    language_server._files.pop(uri, None)
 
-    if ls._pyright:
-        ls._pyright.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
+    if language_server._pyright:
+        language_server._pyright.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
 
 
 @server.feature(types.TEXT_DOCUMENT_HOVER)
-async def hover(ls: FragmentsServer, params: types.HoverParams) -> types.Hover | None:
-    if ls._pyright is None:
+async def hover(language_server: FragmentsServer, params: types.HoverParams) -> types.Hover | None:
+    if language_server._pyright is None:
         return None
 
     uri = params.text_document.uri
-    state = ls._files.get(uri)
+    state = language_server._files.get(uri)
     if state is None:
         return None
 
-    pos = params.position
-    orig_offset = _to_offset(state.orig_line_starts, pos.line, pos.character)
+    position = params.position
+    orig_offset = _to_offset(state.orig_line_starts, position.line, position.character)
     trans_offset = orig_to_trans(orig_offset, state.segments)
     if trans_offset is None:
         return None
 
     trans_pos = _to_position(state.trans_line_starts, trans_offset)
-    result = await ls._pyright.request(
+    result = await language_server._pyright.request(
         "textDocument/hover",
         {"textDocument": {"uri": uri}, "position": trans_pos},
     )
@@ -302,18 +302,18 @@ async def hover(ls: FragmentsServer, params: types.HoverParams) -> types.Hover |
 
 @server.feature(types.TEXT_DOCUMENT_COMPLETION, types.CompletionOptions(trigger_characters=["."]))
 async def completion(
-    ls: FragmentsServer, params: types.CompletionParams
+    language_server: FragmentsServer, params: types.CompletionParams
 ) -> types.CompletionList | None:
-    if ls._pyright is None:
+    if language_server._pyright is None:
         return None
 
     uri = params.text_document.uri
-    state = ls._files.get(uri)
+    state = language_server._files.get(uri)
     if state is None:
         return None
 
-    pos = params.position
-    orig_offset = _to_offset(state.orig_line_starts, pos.line, pos.character)
+    position = params.position
+    orig_offset = _to_offset(state.orig_line_starts, position.line, position.character)
     trans_offset = orig_to_trans(orig_offset, state.segments)
     if trans_offset is None:
         return None
@@ -327,7 +327,7 @@ async def completion(
             "triggerCharacter": params.context.trigger_character,
         }
 
-    result = await ls._pyright.request(
+    result = await language_server._pyright.request(
         "textDocument/completion",
         {"textDocument": {"uri": uri}, "position": trans_pos, "context": context},
     )
@@ -342,7 +342,7 @@ async def completion(
         raw_items = completion_result.get("items", [])
         is_incomplete = completion_result.get("isIncomplete", False)
 
-    items = [_converter.structure(i, types.CompletionItem) for i in _remap_completion_items(raw_items, state)]
+    items = [_converter.structure(item, types.CompletionItem) for item in _remap_completion_items(raw_items, state)]
     return types.CompletionList(is_incomplete=is_incomplete, items=items)
 
 
@@ -362,34 +362,36 @@ _TOKEN_MODIFIERS = [
     types.SemanticTokensLegend(token_types=_TOKEN_TYPES, token_modifiers=_TOKEN_MODIFIERS),
 )
 async def semantic_tokens_full(
-    ls: FragmentsServer, params: types.SemanticTokensParams
+    language_server: FragmentsServer, params: types.SemanticTokensParams
 ) -> types.SemanticTokens:
-    state = ls._files.get(params.text_document.uri)
-    if state is None or ls._pyright is None:
+    state = language_server._files.get(params.text_document.uri)
+    if state is None or language_server._pyright is None:
         return types.SemanticTokens(data=[])
 
-    result = await ls._pyright.request(
+    result = await language_server._pyright.request(
         "textDocument/semanticTokens/full",
         {"textDocument": {"uri": params.text_document.uri}},
     )
-    raw = (result.get("result") or {}).get("data") or []
+    raw_data = (result.get("result") or {}).get("data") or []
 
-    out: list[int] = []
+    output: list[int] = []
     trans_line = trans_char = prev_line = prev_char = 0
-    for i in range(0, len(raw), 5):
-        dl, dc, length, tt, tm = raw[i : i + 5]
-        trans_line += dl
-        trans_char = dc if dl > 0 else trans_char + dc
+    for i in range(0, len(raw_data), 5):
+        delta_line, delta_char, length, token_type, token_modifiers = raw_data[i : i + 5]
+        trans_line += delta_line
+        trans_char = delta_char if delta_line > 0 else trans_char + delta_char
+        if trans_line >= len(state.trans_line_starts):
+            continue
         orig_offset = trans_to_orig(_to_offset(state.trans_line_starts, trans_line, trans_char), state.segments)
         if orig_offset is None:
             continue
         orig_pos = _to_position(state.orig_line_starts, orig_offset)
         line, char = orig_pos["line"], orig_pos["character"]
-        dl = line - prev_line
-        out.extend([dl, char if dl > 0 else char - prev_char, length, tt, tm])
+        delta_line = line - prev_line
+        output.extend([delta_line, char if delta_line > 0 else char - prev_char, length, token_type, token_modifiers])
         prev_line, prev_char = line, char
 
-    return types.SemanticTokens(data=out)
+    return types.SemanticTokens(data=output)
 
 
 def main() -> None:

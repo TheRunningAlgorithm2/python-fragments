@@ -15,7 +15,7 @@ class Segment:
 
 def to_offset(source: str, line: int, character: int) -> int:
     lines = source.split("\n")
-    return sum(len(lines[i]) + 1 for i in range(line)) + character
+    return sum(len(lines[line_index]) + 1 for line_index in range(line)) + character
 
 
 def to_position(source: str, offset: int) -> dict:
@@ -27,18 +27,18 @@ def orig_to_trans(orig_offset: int, segments: list[Segment]) -> int | None:
     orig_cursor = 0
     trans_cursor = len(IMPORT_PREFIX)
 
-    for seg in segments:
-        gap = seg.orig_start - orig_cursor
+    for segment in segments:
+        gap = segment.orig_start - orig_cursor
         if orig_offset < orig_cursor + gap:
             return trans_cursor + (orig_offset - orig_cursor)
         orig_cursor += gap
         trans_cursor += gap
 
-        frag_orig = seg.orig_end - seg.orig_start
-        if orig_offset < orig_cursor + frag_orig:
+        fragment_orig_length = segment.orig_end - segment.orig_start
+        if orig_offset < orig_cursor + fragment_orig_length:
             return None
-        orig_cursor += frag_orig
-        trans_cursor += seg.trans_end - seg.trans_start
+        orig_cursor += fragment_orig_length
+        trans_cursor += segment.trans_end - segment.trans_start
 
     return trans_cursor + (orig_offset - orig_cursor)
 
@@ -51,18 +51,18 @@ def trans_to_orig(trans_offset: int, segments: list[Segment]) -> int | None:
     orig_cursor = 0
     trans_cursor = prefix
 
-    for seg in segments:
-        gap = seg.trans_start - trans_cursor
+    for segment in segments:
+        gap = segment.trans_start - trans_cursor
         if trans_offset < trans_cursor + gap:
             return orig_cursor + (trans_offset - trans_cursor)
         orig_cursor += gap
         trans_cursor += gap
 
-        frag_trans = seg.trans_end - seg.trans_start
-        if trans_offset < trans_cursor + frag_trans:
+        fragment_trans_length = segment.trans_end - segment.trans_start
+        if trans_offset < trans_cursor + fragment_trans_length:
             return None
-        orig_cursor += seg.orig_end - seg.orig_start
-        trans_cursor += frag_trans
+        orig_cursor += segment.orig_end - segment.orig_start
+        trans_cursor += fragment_trans_length
 
     return orig_cursor + (trans_offset - trans_cursor)
 

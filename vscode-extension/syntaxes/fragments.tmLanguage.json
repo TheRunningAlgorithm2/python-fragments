@@ -9,6 +9,7 @@
   "repository": {
     "fragment": {
       "name": "meta.fragment",
+      "contentName": "meta.embedded.html.fragment",
       "begin": "<>",
       "end": "</>",
       "beginCaptures": { "0": { "name": "punctuation.definition.tag.fragment" } },

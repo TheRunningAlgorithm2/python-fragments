@@ -15,7 +15,7 @@ def test_single_fragment():
     assert len(segments) == 1
     seg = segments[0]
     assert source[seg.orig_start : seg.orig_end] == "<>\n    <h1>Hello</h1>\n</>"
-    assert result[seg.trans_start : seg.trans_end] == 'sequence([el("h1", ["Hello"], {}, False)])'
+    assert result[seg.trans_start : seg.trans_end] == 'sequence([el("h1",["Hello"],oneline=False,)])'
 
 
 def test_python_before_fragment():
@@ -25,7 +25,7 @@ def test_python_before_fragment():
     assert len(segments) == 1
     seg = segments[0]
     assert source[seg.orig_start : seg.orig_end] == "<>\n    <p>Hi</p>\n</>"
-    assert result[seg.trans_start : seg.trans_end] == 'sequence([el("p", ["Hi"], {}, False)])'
+    assert result[seg.trans_start : seg.trans_end] == 'sequence([el("p",["Hi"],oneline=False,)])'
 
 
 def test_python_after_fragment():
