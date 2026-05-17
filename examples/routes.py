@@ -2,19 +2,35 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from layouts import Base
+from dataclasses import dataclass
+from datetime import datetime
 
 router = APIRouter()
 
-view_count: int = 0
+@dataclass
+class Post:
+    title: str
+    date: datetime
+
+POSTS: list[Post] = [
+    Post("Python Fragments", datetime(2026, 5, 17)),
+    Post("The Running Algorithm", datetime(2026, 5, 12)),
+]
+
+
+def PostCard(children: list[str], post: Post) -> str:
+    return <>
+        <div>
+            <h2>{{ post.title }}</h2>
+            <p>{{ post.date.strftime("%D-%M-%Y") }}</p>
+        </div>
+    </>
 
 
 @router.get("/", response_class=HTMLResponse)
 async def page() -> str:
-    global view_count
-    view_count += 1
     return <>
         <Base title="Test" header="Test Header">
-            <p>View Count:</p>
-            <p>{{ view_count }}</p>
+            <PostCard for={{ post in POSTS }} post={{ post }} />
         </Base>
     </>

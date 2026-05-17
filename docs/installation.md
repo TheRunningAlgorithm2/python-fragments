@@ -15,6 +15,6 @@ from fragments import loader
 from my_components import fragment_component
 ```
 
-You may want to include an `# isort: ignore` comment to make sure this import isn't auomatically moved.
+You may want to include an `# isort: ignore` comment to make sure this import isn't automatically moved.
 
 That's all. Any `.py` file containing `<>` will be transpiled automatically at import time.
