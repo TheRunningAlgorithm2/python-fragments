@@ -1,3 +1,7 @@
+# Running Python Commands
+
+Activate the venv with `source venv/bin/activate` before running Python or pip commands. Run it once at the start of a multi-command sequence rather than chaining it with `&&` on every line.
+
 # Coding Style
 
 - **Never abbreviate names.** Write `original` not `orig`, `transpiled` not `trans`, `interpolation` not `interp`, `expression` not `expr`, `offset` not `off`, etc. Full words everywhere — variables, parameters, methods, and local names.

@@ -1,7 +1,7 @@
 from re import Match
 import re
 
-from fragments.ast_nodes import ASTFragment, ASTHTMLAttribute, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
+from fragments.ast_nodes import ASTFragment, ASTHTMLAttribute, ASTHTMLComment, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
 from fragments.source import Source
 
 PYTHON = r"([\s\S]*?)(?=<>)|[\s\S]*$"
@@ -67,7 +67,7 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
     source_start: int = source.offset
     source = expect_string(source, "<>")
 
-    children: list[ASTHTMLElement | ASTHTMLText | ASTInterpolation] = []
+    children: list[ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation] = []
     while not source.remaining().startswith("</>"):
         source, _ = source.eat_whitespace()
         if source.remaining().startswith("</>"):
@@ -82,8 +82,12 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
     return source, ASTFragment(source_start, source_end, children)
 
 
-def expect_expression(source: Source) -> tuple[Source, ASTHTMLElement | ASTHTMLText | ASTInterpolation]:
+def expect_expression(source: Source) -> tuple[Source, ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation]:
     """Any HTML / functional block that might appear as part of the fragment."""
+    if source.remaining().startswith("<!--"):
+        source, html_comment = expect_html_comment(source)
+        return source, html_comment
+
     if source.remaining().startswith("<"):
         source, html_element = expect_html_element(source)
         return source, html_element
@@ -94,6 +98,14 @@ def expect_expression(source: Source) -> tuple[Source, ASTHTMLElement | ASTHTMLT
 
     source, html_text = expect_html_text(source)
     return source, html_text
+
+
+def expect_html_comment(source: Source) -> tuple[Source, ASTHTMLComment]:
+    source_start = source.offset
+    source = expect_string(source, "<!--")
+    source, content = expect_regex(source, r"[\s\S]*?(?=-->)", "comment content")
+    source = expect_string(source, "-->")
+    return source, ASTHTMLComment(source_start, source.offset, content)
 
 
 def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
@@ -147,7 +159,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
     source = expect_string(source, ">")
     source, _ = source.eat_whitespace()
 
-    children: list[ASTHTMLElement | ASTHTMLText | ASTInterpolation] = []
+    children: list[ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation] = []
     while not source.remaining().startswith("</"):
         source, child = expect_expression(source)
         children.append(child)

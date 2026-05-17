@@ -21,7 +21,8 @@ POSTS: list[Post] = [
 def PostCard(children: list[str], post: Post) -> str:
     return <>
         <div>
-            <h2 x-data="">{{ post.title }}</h2>
+            <!-- Hello -->
+            <h2>{{ post.title }}</h2>
             <p>{{ post.date.strftime("%d-%m-%y") }}</p>
         </div>
     </>

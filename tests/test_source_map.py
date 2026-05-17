@@ -3,8 +3,8 @@ from fragments.lsp.file_state import _FileState
 from fragments.source import Source
 from lsprotocol import types
 
-IMPORT_PREFIX = "from fragments.html.elements import el, sequence\n"
-IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)  # 49
+IMPORT_PREFIX = "from fragments.html.elements import el, sequence, comment\n"
+IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)
 
 
 def make_state(source_str: str) -> _FileState:

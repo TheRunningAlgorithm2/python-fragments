@@ -46,6 +46,7 @@ nav:
     - Attributes: syntax-and-usage/attributes.md
     - Control Flow: syntax-and-usage/control-flow.md
     - Components: syntax-and-usage/components.md
+    - Comments: syntax-and-usage/comments.md
   - Transpiler:
     - 1. Transpilation: transpiler/transpilation.md
     - 2. HTML Library: transpiler/html-library.md

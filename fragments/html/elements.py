@@ -28,6 +28,10 @@ def el(
     return f"""<{tag_contents_string}>{children_string}</{name}>"""
 
 
+def comment(content: str) -> str:
+    return f"<!-- {content} -->"
+
+
 def attributes_to_string(attributes: dict[str, Any]) -> str:
     return " ".join("=".join([key, f'"{value}"']) if value is not None else key for key, value in attributes.items())
 

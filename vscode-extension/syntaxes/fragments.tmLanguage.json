@@ -15,10 +15,18 @@
       "beginCaptures": { "0": { "name": "punctuation.definition.tag.fragment" } },
       "endCaptures": { "0": { "name": "punctuation.definition.tag.fragment" } },
       "patterns": [
+        { "include": "#comment" },
         { "include": "#closing-tag" },
         { "include": "#open-tag" },
         { "include": "#interpolation" }
       ]
+    },
+    "comment": {
+      "name": "comment.block.html",
+      "begin": "<!--",
+      "end": "-->",
+      "beginCaptures": { "0": { "name": "punctuation.definition.comment.html" } },
+      "endCaptures": { "0": { "name": "punctuation.definition.comment.html" } }
     },
     "closing-tag": {
       "match": "(</)([a-zA-Z][a-zA-Z0-9_-]*)(>)",

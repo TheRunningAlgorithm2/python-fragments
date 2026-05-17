@@ -13,11 +13,11 @@ class ASTModule:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __template__: str = "from fragments.html.elements import el, sequence\n{}"
+    __template__: str = "from fragments.html.elements import el, sequence, comment\n{}"
 
     def transpile(self, transpiled_start: int = 0) -> None:
         self.transpiled_start = transpiled_start
-        transpiled_start += 49
+        transpiled_start += len(self.__template__) - 2
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end
@@ -48,7 +48,7 @@ class ASTFragment:
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
 
-    children: list["ASTHTMLElement | ASTHTMLText | ASTInterpolation"]
+    children: list["ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation"]
 
     transpiled_content: str = field(init=False)
     transpiled_start: int = field(init=False)
@@ -151,6 +151,25 @@ class ASTHTMLElement:
         attributes = ",".join(attribute.transpiled_content for attribute in self.attributes.values())
         self.transpiled_content = self.__component_template__.format(self.name, children, attributes)
         self.transpiled_end = start + len(self.transpiled_content)
+
+
+@dataclass(slots=True)
+class ASTHTMLComment:
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    content: str
+
+    transpiled_content: str = field(init=False)
+    transpiled_start: int = field(init=False)
+    transpiled_end: int = field(init=False)
+
+    __template__: str = """comment("{}")"""
+
+    def transpile(self, transpiled_start: int) -> None:
+        self.transpiled_start = transpiled_start
+        self.transpiled_content = self.__template__.format(self.content)
+        self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
 
 @dataclass(slots=True)
