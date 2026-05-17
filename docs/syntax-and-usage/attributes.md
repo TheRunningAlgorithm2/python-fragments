@@ -1,6 +1,6 @@
 # Attributes
 
-## String attributes
+## String attributes (default)
 
 Plain string values work exactly as in HTML:
 

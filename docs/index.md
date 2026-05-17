@@ -1,12 +1,18 @@
 # Python Fragments
 
-**Modern HTML template rendering in Python** - no build step, no template files, and native HTML awareness out of the box.
+**Production-ready, modern HTML template rendering in Python** - no build step, no template files, and native HTML awareness out of the box.
 
 === "Plain Python"
 
     ```python
-    from fragments import loader  # isort: skip
+    # main.py
+    from fragments import loader
 
+    from views import render_index
+    ```
+
+    ```python
+    # views.py
     from my_components import Layout, PostCard
 
     POSTS = [...]  # your data here
@@ -24,16 +30,26 @@
 === "FastAPI"
 
     ```python
-    from fragments import loader  # isort: skip
+    # main.py
+    from fragments import loader
 
     from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse
+    from .index import router
 
     app = FastAPI()
+    app.include_router(router)
+    ```
+
+    ```python
+    # index.py
+    from fastapi import APIRouter
+    from fastapi.responses import HTMLResponse
+
+    router = APIRouter()
 
     POSTS = [...]  # your data here
 
-    @app.get("/", response_class=HTMLResponse)
+    @router.get("/", response_class=HTMLResponse)
     async def index() -> str:
         published = [p for p in POSTS if p.published]
         return <>
@@ -47,15 +63,25 @@
 === "Flask"
 
     ```python
-    from fragments import loader  # isort: skip
+    # app.py
+    from fragments import loader
 
     from flask import Flask
+    from views import index_bp
 
     app = Flask(__name__)
+    app.register_blueprint(index_bp)
+    ```
+
+    ```python
+    # views.py
+    from flask import Blueprint
+
+    index_bp = Blueprint("index", __name__)
 
     POSTS = [...]  # your data here
 
-    @app.route("/")
+    @index_bp.route("/")
     def index() -> str:
         published = [p for p in POSTS if p.published]
         return <>
@@ -69,8 +95,17 @@
 === "Django"
 
     ```python
-    from fragments import loader  # isort: skip
+    # urls.py
+    from fragments import loader
 
+    from django.urls import path
+    from views import index
+
+    urlpatterns = [path("", index)]
+    ```
+
+    ```python
+    # views.py
     from django.http import HttpRequest, HttpResponse
 
     POSTS = [...]  # your data here
@@ -89,19 +124,24 @@
 
 ## Why Fragments?
 
-<div class="feature-grid">
-  <div class="feature-card">
-    <strong>No build step</strong>
-    <p>Transpiled automatically at import time. No CLI, no watchers, no separate compile phase.</p>
-  </div>
-  <div class="feature-card">
-    <strong>Native HTML</strong>
-    <p>Real tags, attributes, and structure. If you know HTML, you already know fragment syntax.</p>
-  </div>
-  <div class="feature-card">
-    <strong>Full IDE support</strong>
-    <p>Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.</p>
-  </div>
+<div class="grid cards" markdown>
+
+-   ### No build step
+
+    Transpiled automatically at import time. No CLI, no watchers, no separate compile phase.
+
+-   ### Native HTML
+
+    Real tags, attributes, and structure. If you know HTML, you already know fragment syntax.
+
+-   ### Production Tested
+
+    Used in production and developed in-house by [TheRunningAlgorithm](https://www.therunningalgorithm.com), exposed to thousands of live users prior to open source release
+
+-   ### Full IDE support
+
+    Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.
+
 </div>
 
 ---

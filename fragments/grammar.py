@@ -4,7 +4,6 @@ import re
 from fragments.ast_nodes import ASTFragment, ASTHTMLAttribute, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
 from fragments.source import Source
 
-WHITESPACE = r"\s*"
 PYTHON = r"([\s\S]*?)(?=<>)|[\s\S]*$"
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 STRING_CONTENTS = r"(.*?)(?=\")"
@@ -13,7 +12,10 @@ HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-]*"
 HTML_TEXT = r"(.*?)(?=<)"
 
 
-class ParsingError(Exception): ...
+class ParsingError(Exception):
+    def __init__(self, message: str, source_start: int) -> None:
+        super().__init__(message)
+        self.source_start: int = source_start
 
 
 def optional_regex(source: Source, pattern: str) -> tuple[Source, str | None]:
@@ -28,14 +30,14 @@ def expect_regex(source: Source, pattern: str, label: str) -> tuple[Source, str]
     """Expect the source to start with the given pattern, return the source after the pattern and the found match."""
     source, result = optional_regex(source, pattern)
     if result is None:
-        raise ParsingError(f"Expected {label} but got {source.remaining()[:100]}...")
+        raise ParsingError(f"Expected {label}", source.offset)
     return source, result
 
 
 def expect_string(source: Source, string: str) -> Source:
     """Expect the source to start with the given string, return the source after the string."""
     if not source.remaining().startswith(string):
-        raise ParsingError(f"Expected {string} but got {source.remaining()[:25]}...")
+        raise ParsingError(f"Expected {string}", source.offset)
     return source.eat(len(string))
 
 
@@ -67,13 +69,13 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
 
     children: list[ASTHTMLElement | ASTHTMLText | ASTInterpolation] = []
     while not source.remaining().startswith("</>"):
-        source, _ = optional_regex(source, WHITESPACE)
+        source, _ = source.eat_whitespace()
         if source.remaining().startswith("</>"):
             break
         source, child = expect_expression(source)
         children.append(child)
 
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source = expect_string(source, "</>")
     source_end: int = source.offset
 
@@ -98,9 +100,9 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
     """An HTML element that may appear in the fragment tree."""
     element_source_start = source.offset
     source = expect_string(source, "<")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source, name = expect_regex(source, HTML_IDENTIFIER, "element name")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
 
     attributes: dict[str, ASTHTMLAttribute] = {}
     while not (source.remaining().startswith(">") or source.remaining().startswith("/>")):
@@ -123,7 +125,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
             attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, interpolation)
             attributes[attribute_name] = attribute
 
-        source, _ = optional_regex(source, WHITESPACE)
+        source, _ = source.eat_whitespace()
 
     if_attribute = attributes.pop("if") if "if" in attributes else None
     for_attribute = attributes.pop("for") if "for" in attributes else None
@@ -143,22 +145,22 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
         return source, html_element
 
     source = expect_string(source, ">")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
 
     children: list[ASTHTMLElement | ASTHTMLText | ASTInterpolation] = []
     while not source.remaining().startswith("</"):
         source, child = expect_expression(source)
         children.append(child)
-        source, _ = optional_regex(source, WHITESPACE)
+        source, _ = source.eat_whitespace()
 
     source = expect_string(source, "</")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source, closing_name = expect_regex(source, IDENTIFIER, "element name")
 
     if name != closing_name:
-        raise ValueError(f"Element closed ({closing_name!r}) is not the same as currently opened element ({name!r})")
+        raise ParsingError(f"Element closed ({closing_name!r}) is not the same as currently opened element ({name!r})", source.offset)
 
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source = expect_string(source, ">")
 
     html_element = ASTHTMLElement(
@@ -178,9 +180,9 @@ def expect_interpolation(source: Source) -> tuple[Source, ASTInterpolation]:
     """An interpolation block."""
     source_start = source.offset
     source = expect_string(source, "{{")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source, expression = expect_regex(source, INTERPOLATION_EXPRESSION, "expression")
-    source, _ = optional_regex(source, WHITESPACE)
+    source, _ = source.eat_whitespace()
     source = expect_string(source, "}}")
     return source, ASTInterpolation(source_start, source.offset, expression)
 

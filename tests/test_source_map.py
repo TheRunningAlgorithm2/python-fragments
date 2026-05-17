@@ -1,5 +1,5 @@
 from fragments import grammar
-from fragments.lsp.server import _FileState
+from fragments.lsp.file_state import _FileState
 from fragments.source import Source
 from lsprotocol import types
 
