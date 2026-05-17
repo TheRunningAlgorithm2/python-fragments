@@ -25,18 +25,23 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
 
 extra_css:
   - extras.css
 
 nav:
-  - Home: index.md
-  - Transpiler: transpiler.md
+  - Introduction: index.md
   - Getting Started:
-    - Installation: installation.md
-    - IDEs & Tooling:
-      - VS Code: ide-tooling/vs-code.md
-      - LSP: ide-tooling/lsp.md
+    - Checklist: getting-started/checklist.md
+    - Installation: getting-started/installation.md
+    - VS Code: getting-started/vs-code.md
+    - LSP: getting-started/lsp.md
+  - Transpiler:
+    - 1. Transpilation: transpiler/transpilation.md
+    - 2. HTML Library: transpiler/html-library.md
+    - 3. Import Hook: transpiler/import-hook.md
   - Syntax:
     - Fragments: syntax/fragments.md
     - Attributes: syntax/attributes.md

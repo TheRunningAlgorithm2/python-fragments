@@ -1,11 +1,36 @@
 /* Custom styles */
 
+@import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@700&display=swap');
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: 'Gabarito', sans-serif;
+  font-weight: 700;
+  color: #ffffff;
+}
+
 [data-md-color-scheme="slate"] {
   --md-primary-fg-color: #7bc24c;
   --md-primary-fg-color--light: #96d66b;
   --md-primary-fg-color--dark: #60a035;
   --md-accent-fg-color: #7bc24c;
   --md-typeset-a-color: #7bc24c !important;
+}
+
+.md-search__form {
+  border-radius: 6px;
+}
+
+[data-md-toggle="search"]:checked ~ .md-header .md-search__form {
+  border-radius: 6px 6px 0 0;
+}
+
+[data-md-toggle="search"]:checked ~ .md-header .md-search__output {
+  border-radius: 0 0 6px 6px;
 }
 
 .feature-grid {

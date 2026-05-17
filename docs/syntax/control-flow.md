@@ -34,3 +34,14 @@ return <>
     {{ post.title }}
 </li>
 ```
+
+## Components
+
+`if` and `for` work on component tags too:
+
+```python
+<PostCard for={{ post in published }} post={{ post }} />
+<Banner if={{ show_banner }} />
+```
+
+They are purely structural — the transpiler handles them before the call is emitted, so neither `if` nor `for` is ever passed as a keyword argument to the component function.

@@ -11,7 +11,7 @@ from lsprotocol.converters import get_converter
 from pygls.server import LanguageServer
 
 from fragments import grammar
-from fragments.ast_nodes import ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
+from fragments.ast_nodes import ASTFragment, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
 from fragments.lsp.pyright import PyrightClient
 from fragments.source import Source
 
@@ -127,7 +127,8 @@ class FragmentsServer(LanguageServer):
             text_document_sync_kind=types.TextDocumentSyncKind.Full,
         )
         self._pyright: PyrightClient | None = None
-        self._files: dict[str, _FileState] = {}
+        self._files: dict[str, _FileState | None] = {}
+        self._debounce_tasks: dict[str, asyncio.Task[None]] = {}
 
     def _on_pyright_notification(self, message: dict[str, Any]) -> None:
         if message.get("method") == "textDocument/publishDiagnostics":
@@ -149,6 +150,7 @@ class FragmentsServer(LanguageServer):
 
     async def _publish_diagnostics(self, params: dict[str, Any]) -> None:
         uri = params["uri"]
+        # _files.get() returns None for both "not open" and "pure Python" — both pass through without remapping
         state = self._files.get(uri)
         diagnostics: list[types.Diagnostic] = []
 
@@ -181,6 +183,20 @@ def _remap_text_edits(text_edits: list[types.TextEdit], state: _FileState) -> li
             edit.range = remapped
             result.append(edit)
     return result
+
+
+def _build_file_state(text: str) -> tuple[_FileState | None, str]:
+    """Parse text and return (state, content_for_pyright).
+
+    Returns (None, text) for pure Python files and (_FileState, transpiled) for fragment files.
+    """
+    if "<>" not in text:
+        return None, text
+    _, module = grammar.expect_module(Source.from_string(text))
+    if not any(isinstance(child, ASTFragment) for child in module.children):
+        return None, text
+    module.transpile()
+    return _FileState(text, module.transpiled_content, module), module.transpiled_content
 
 
 @server.feature(types.INITIALIZED)
@@ -216,11 +232,10 @@ async def initialized(language_server: FragmentsServer, _params: types.Initializ
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_OPEN)
-def did_open(language_server: FragmentsServer, params: types.DidOpenTextDocumentParams) -> None:
+async def did_open(language_server: FragmentsServer, params: types.DidOpenTextDocumentParams) -> None:
     document = params.text_document
-    _, module = grammar.expect_module(Source.from_string(document.text))
-    module.transpile()
-    language_server._files[document.uri] = _FileState(document.text, module.transpiled_content, module)
+    state, content_for_pyright = await asyncio.get_running_loop().run_in_executor(None, _build_file_state, document.text)
+    language_server._files[document.uri] = state
 
     if language_server._pyright:
         language_server._pyright.notify(
@@ -230,28 +245,39 @@ def did_open(language_server: FragmentsServer, params: types.DidOpenTextDocument
                     "uri": document.uri,
                     "languageId": document.language_id,
                     "version": document.version,
-                    "text": module.transpiled_content,
+                    "text": content_for_pyright,
                 }
             },
         )
+
+
+_DEBOUNCE_SECONDS = 0.15
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
 def did_change(language_server: FragmentsServer, params: types.DidChangeTextDocumentParams) -> None:
     uri = params.text_document.uri
     text = params.content_changes[-1].text
-    _, module = grammar.expect_module(Source.from_string(text))
-    module.transpile()
-    language_server._files[uri] = _FileState(text, module.transpiled_content, module)
 
-    if language_server._pyright:
-        language_server._pyright.notify(
-            "textDocument/didChange",
-            {
-                "textDocument": {"uri": uri, "version": params.text_document.version},
-                "contentChanges": [{"text": module.transpiled_content}],
-            },
-        )
+    existing = language_server._debounce_tasks.pop(uri, None)
+    if existing:
+        existing.cancel()
+
+    async def _apply_change() -> None:
+        await asyncio.sleep(_DEBOUNCE_SECONDS)
+        state, content_for_pyright = await asyncio.get_running_loop().run_in_executor(None, _build_file_state, text)
+        language_server._files[uri] = state
+        language_server._debounce_tasks.pop(uri, None)
+        if language_server._pyright:
+            language_server._pyright.notify(
+                "textDocument/didChange",
+                {
+                    "textDocument": {"uri": uri, "version": params.text_document.version},
+                    "contentChanges": [{"text": content_for_pyright}],
+                },
+            )
+
+    language_server._debounce_tasks[uri] = asyncio.ensure_future(_apply_change())
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CLOSE)
@@ -259,17 +285,30 @@ def did_close(language_server: FragmentsServer, params: types.DidCloseTextDocume
     uri = params.text_document.uri
     language_server._files.pop(uri, None)
 
+    existing = language_server._debounce_tasks.pop(uri, None)
+    if existing:
+        existing.cancel()
+
     if language_server._pyright:
         language_server._pyright.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
 
 
 @server.feature(types.TEXT_DOCUMENT_HOVER)
 async def hover(language_server: FragmentsServer, params: types.HoverParams) -> types.Hover | None:
-    if language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return None
-    state = language_server._files.get(params.text_document.uri)
+    state = language_server._files[params.text_document.uri]
+
     if state is None:
-        return None
+        result = await language_server._pyright.request(
+            "textDocument/hover",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": params.position.line, "character": params.position.character},
+            },
+        )
+        raw_hover = result.get("result")
+        return _converter.structure(raw_hover, types.Hover) if raw_hover else None
 
     transpiled_position = state.original_to_transpiled_position(params.position)
     if transpiled_position is None:
@@ -295,15 +334,9 @@ async def hover(language_server: FragmentsServer, params: types.HoverParams) -> 
 
 @server.feature(types.TEXT_DOCUMENT_COMPLETION, types.CompletionOptions(trigger_characters=["."]))
 async def completion(language_server: FragmentsServer, params: types.CompletionParams) -> types.CompletionList | None:
-    if language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return None
-    state = language_server._files.get(params.text_document.uri)
-    if state is None:
-        return None
-
-    transpiled_position = state.original_to_transpiled_position(params.position)
-    if transpiled_position is None:
-        return None
+    state = language_server._files[params.text_document.uri]
 
     context = None
     if params.context is not None:
@@ -311,6 +344,26 @@ async def completion(language_server: FragmentsServer, params: types.CompletionP
             "triggerKind": params.context.trigger_kind.value,
             "triggerCharacter": params.context.trigger_character,
         }
+
+    if state is None:
+        result = await language_server._pyright.request(
+            "textDocument/completion",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": params.position.line, "character": params.position.character},
+                "context": context,
+            },
+        )
+        raw_result = result.get("result")
+        if not raw_result:
+            return None
+        if isinstance(raw_result, list):
+            return types.CompletionList(is_incomplete=False, items=_converter.structure(raw_result, list[types.CompletionItem]))
+        return _converter.structure(raw_result, types.CompletionList)
+
+    transpiled_position = state.original_to_transpiled_position(params.position)
+    if transpiled_position is None:
+        return None
 
     result = await language_server._pyright.request(
         "textDocument/completion",
@@ -355,23 +408,29 @@ async def completion(language_server: FragmentsServer, params: types.CompletionP
 
 @server.feature(types.TEXT_DOCUMENT_DEFINITION)
 async def definition(language_server: FragmentsServer, params: types.DefinitionParams) -> list[types.Location] | None:
-    if language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return None
-    state = language_server._files.get(params.text_document.uri)
+    state = language_server._files[params.text_document.uri]
+
     if state is None:
-        return None
-
-    transpiled_position = state.original_to_transpiled_position(params.position)
-    if transpiled_position is None:
-        return None
-
-    result = await language_server._pyright.request(
-        "textDocument/definition",
-        {
-            "textDocument": {"uri": params.text_document.uri},
-            "position": {"line": transpiled_position.line, "character": transpiled_position.character},
-        },
-    )
+        result = await language_server._pyright.request(
+            "textDocument/definition",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": params.position.line, "character": params.position.character},
+            },
+        )
+    else:
+        transpiled_position = state.original_to_transpiled_position(params.position)
+        if transpiled_position is None:
+            return None
+        result = await language_server._pyright.request(
+            "textDocument/definition",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": transpiled_position.line, "character": transpiled_position.character},
+            },
+        )
 
     raw_result = result.get("result")
     if not raw_result:
@@ -393,11 +452,25 @@ async def definition(language_server: FragmentsServer, params: types.DefinitionP
 
 @server.feature(types.TEXT_DOCUMENT_PREPARE_RENAME)
 async def prepare_rename(language_server: FragmentsServer, params: types.PrepareRenameParams) -> types.Range | None:
-    if language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return None
-    state = language_server._files.get(params.text_document.uri)
+    state = language_server._files[params.text_document.uri]
+
     if state is None:
-        return None
+        result = await language_server._pyright.request(
+            "textDocument/prepareRename",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": params.position.line, "character": params.position.character},
+            },
+        )
+        raw_result = result.get("result")
+        if not raw_result:
+            return None
+        range_dict = raw_result.get("range", raw_result) if isinstance(raw_result, dict) else raw_result
+        if not isinstance(range_dict, dict) or "start" not in range_dict:
+            return None
+        return _converter.structure(range_dict, types.Range)
 
     transpiled_position = state.original_to_transpiled_position(params.position)
     if transpiled_position is None:
@@ -415,7 +488,6 @@ async def prepare_rename(language_server: FragmentsServer, params: types.Prepare
     if not raw_result:
         return None
 
-    # Normalise to a plain Range (discard placeholder / defaultBehavior variants)
     range_dict = raw_result.get("range", raw_result) if isinstance(raw_result, dict) else raw_result
     if not isinstance(range_dict, dict) or "start" not in range_dict:
         return None
@@ -425,24 +497,31 @@ async def prepare_rename(language_server: FragmentsServer, params: types.Prepare
 
 @server.feature(types.TEXT_DOCUMENT_RENAME)
 async def rename(language_server: FragmentsServer, params: types.RenameParams) -> types.WorkspaceEdit | None:
-    if language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return None
-    state = language_server._files.get(params.text_document.uri)
+    state = language_server._files[params.text_document.uri]
+
     if state is None:
-        return None
-
-    transpiled_position = state.original_to_transpiled_position(params.position)
-    if transpiled_position is None:
-        return None
-
-    result = await language_server._pyright.request(
-        "textDocument/rename",
-        {
-            "textDocument": {"uri": params.text_document.uri},
-            "position": {"line": transpiled_position.line, "character": transpiled_position.character},
-            "newName": params.new_name,
-        },
-    )
+        result = await language_server._pyright.request(
+            "textDocument/rename",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": params.position.line, "character": params.position.character},
+                "newName": params.new_name,
+            },
+        )
+    else:
+        transpiled_position = state.original_to_transpiled_position(params.position)
+        if transpiled_position is None:
+            return None
+        result = await language_server._pyright.request(
+            "textDocument/rename",
+            {
+                "textDocument": {"uri": params.text_document.uri},
+                "position": {"line": transpiled_position.line, "character": transpiled_position.character},
+                "newName": params.new_name,
+            },
+        )
 
     raw_result = result.get("result")
     if not raw_result:
@@ -481,15 +560,18 @@ _TOKEN_MODIFIERS = ["declaration", "definition", "readonly", "static", "async", 
     types.SemanticTokensLegend(token_types=_TOKEN_TYPES, token_modifiers=_TOKEN_MODIFIERS),
 )
 async def semantic_tokens_full(language_server: FragmentsServer, params: types.SemanticTokensParams) -> types.SemanticTokens:
-    state = language_server._files.get(params.text_document.uri)
-    if state is None or language_server._pyright is None:
+    if language_server._pyright is None or params.text_document.uri not in language_server._files:
         return types.SemanticTokens(data=[])
+    state = language_server._files[params.text_document.uri]
 
     result = await language_server._pyright.request(
         "textDocument/semanticTokens/full",
         {"textDocument": {"uri": params.text_document.uri}},
     )
     raw_data = (result.get("result") or {}).get("data") or []
+
+    if state is None:
+        return types.SemanticTokens(data=raw_data)
 
     output: list[int] = []
     transpiled_line = transpiled_character = previous_line = previous_character = 0

@@ -1,19 +1,6 @@
-# How the Transpiler Works
+# Transpilation
 
-Python does not natively understand `<>` or HTML tags inside `.py` files. Fragments solves this with a **source-level transpiler** that converts fragment syntax into plain Python at import time - so there is no build step.
-
-## The import hook
-
-When you import `fragments.loader`, it installs a custom `MetaPathFinder` on `sys.meta_path`. From that point on, every `.py` file that Python imports is intercepted. If the file contains `<>`, the source is transpiled before it reaches the interpreter. Files without `<>` pass through unchanged.
-
-```python
-from fragments import loader  # installs the hook — must come first
-
-from fastapi import FastAPI   # any fragment-containing module imported after
-from routes import router     # this line is now transpiled automatically
-```
-
-The hook operates on source text, so nothing is written to disk — your `.py` files are never modified.
+Python does not natively understand `<>` or HTML tags inside `.py` files. Fragments solves this with a **source-level transpiler** that converts fragment syntax into plain Python at import time — so there is no build step.
 
 ## A simple example
 
@@ -49,7 +36,7 @@ async def index() -> str:
     return sequence([el("h1",["Hello, world!"],oneline=False,),el("p",["Welcome to Fragments."],oneline=False,)])
 ```
 
-**Endpoint return value** - A plain Python string
+**Endpoint return value** — a plain Python string:
 
 ```python
 '<h1>Hello, world!</h1><p>Welcome to Fragments.</p>'
@@ -59,23 +46,6 @@ The transpiler does two things:
 
 1. Prepends `from fragments.html.elements import el, sequence` at the top of the file.
 2. Replaces every `<> ... </>` block with a call to `sequence(...)`.
-
-## The runtime functions
-
-Fragments are translated into runtime functions from our HTML library `fragments.html`, this is how our native HTML awareness works:
-
-**`el(name, children, oneline, **attributes)`** builds a single HTML element.
-
-| Argument | Type | Purpose |
-|---|---|---|
-| `name` | `str` | The tag name (`"h1"`, `"div"`, …) |
-| `children` | `list[str]` | Rendered inner content |
-| `oneline` | `bool` | `True` for self-closing tags (`/>`) |
-| `**attributes` | `Any` | HTML attributes passed as keyword arguments |
-
-**`sequence(children)`** concatenates a list of rendered strings into one — it is what `<> ... </>` compiles to at the top level.
-
-For the simple example above, at runtime `el("h1",["Hello, world!"],oneline=False,)` produces the string `<h1>Hello, world!</h1>`, and `sequence([...])` joins both elements into the final HTML response.
 
 ## Dynamic content — `for` and `if`
 

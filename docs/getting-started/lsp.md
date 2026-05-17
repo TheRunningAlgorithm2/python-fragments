@@ -1,6 +1,9 @@
 # Language Server
 
-Python Fragments ships a language server that provides full IDE support for fragment syntax inside `.py` files.
+Type checking, completions, hover docs, go-to-definition, and rename work out of the box.
+
+![VS Code completions demo](../assets/vscode.gif)
+
 
 ## Features
 

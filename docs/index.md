@@ -123,7 +123,7 @@ from my_components import my_component
 
 Any `.py` file containing `<>` is transpiled automatically — nothing else to configure.
 
-[Full installation guide](installation.md)
+[Full installation guide](getting-started/installation.md)
 
 ### 2. Use With Your IDE
 
@@ -135,4 +135,4 @@ pip install python-fragments[lsp]
 
 A **VS Code extension** is included with structural syntax highlighting, semantic tokens, diagnostics, go-to-definition, rename, and more.
 
-[Full IDE setup guide](ide-tooling/vs-code.md)
+[Full IDE setup guide](getting-started/vs-code.md)
