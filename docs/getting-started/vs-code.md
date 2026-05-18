@@ -6,9 +6,17 @@ Type checking, completions, hover docs, go-to-definition, and rename work out of
 
 ## Installation
 
-Install the extension from the [VS Code Extension Marketplace]().
+For the  moment, build and install the extension manually:
 
-Install the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and select the interpreter for the environment where `python-fragments[lsp]` is installed. The extension will automatically start `fragments-lsp` from that environment.
+```bash
+npm install -g @vscode/vsce
+cd vscode-extension
+npm install
+vsce package
+code --install-extension <filename>.vsix
+```
+
+<!-- Install the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and select the interpreter for the environment where `python-fragments[lsp]` is installed. The extension will automatically start `fragments-lsp` from that environment. -->
 
 If a conflicting Python language server (such as Pylance) is active, the extension will prompt you to disable it on first activation.
 

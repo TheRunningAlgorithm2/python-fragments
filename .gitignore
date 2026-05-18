@@ -178,3 +178,4 @@ pyrightconfig.json
 # VS Code Extension
 node_modules/
 .vscode/
+*.vsix

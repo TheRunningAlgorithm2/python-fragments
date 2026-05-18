@@ -1,4 +1,9 @@
 {
+  "publisher": "the-running-algorithm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheRunningAlgorithm2/python-fragments"
+  },
   "name": "python-fragments",
   "displayName": "Python Fragments",
   "description": "LSP support for the Python Fragments transpiler",
