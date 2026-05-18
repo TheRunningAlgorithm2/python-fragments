@@ -3,8 +3,12 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fragments"
-version = "0.1.0"
+name = "python-fragments"
+version = "0.1"
+description = "HTML template rendering in Python"
+authors = [{ name = "The Running Algorithm", email = "services@therunningalgorithm.info" }]
+readme = "README.md"
+license = { text = "Proprietary" }
 requires-python = ">=3.12"
 dependencies = []
 
