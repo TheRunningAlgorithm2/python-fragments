@@ -132,7 +132,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
             source = expect_string(source, '"')
             attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, attribute_value, None)
             attributes[attribute_name] = attribute
-        elif source.remaining().startswith("{{ "):
+        elif source.remaining().startswith("{{"):
             source, interpolation = expect_interpolation(source)
             attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, interpolation)
             attributes[attribute_name] = attribute
