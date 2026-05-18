@@ -6,7 +6,7 @@ from lsprotocol import types
 
 from fragments import grammar
 from fragments.lsp.pyright import PyrightClient
-from fragments.lsp.server import FragmentsServer, _TOKEN_MODIFIERS, _TOKEN_TYPES, _build_file_state, _converter, _parse_error_to_diagnostic, server
+from fragments.lsp.server import FragmentsServer, _build_file_state, _converter, _parse_error_to_diagnostic, server
 
 _DEBOUNCE_SECONDS = 0.15
 
@@ -25,19 +25,7 @@ async def initialized(language_server: FragmentsServer, _params: types.Initializ
             "processId": None,
             "rootUri": root_uri,
             "workspaceFolders": workspace_folders or None,
-            "capabilities": {
-                "workspace": {"configuration": True},
-                "textDocument": {
-                    "hover": {"contentFormat": ["markdown", "plaintext"]},
-                    "rename": {"prepareSupport": True},
-                    "semanticTokens": {
-                        "requests": {"full": True},
-                        "tokenTypes": _TOKEN_TYPES,
-                        "tokenModifiers": _TOKEN_MODIFIERS,
-                        "formats": ["relative"],
-                    },
-                },
-            },
+            "capabilities": _converter.unstructure(language_server.client_capabilities),
         },
     )
     pyright.notify("initialized", {})
