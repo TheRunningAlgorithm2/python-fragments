@@ -49,6 +49,12 @@ class FragmentsServer(LanguageServer):
                     config = {**(config or {}), "pythonPath": sys.executable, "defaultInterpreterPath": sys.executable}
                 result.append(config)  # type: ignore[arg-type]
             return result
+        if message["method"] == "client/registerCapability":
+            await self.client_register_capability_async(_converter.structure(message["params"], types.RegistrationParams))
+            return {}
+        if message["method"] == "client/unregisterCapability":
+            await self.client_unregister_capability_async(_converter.structure(message["params"], types.UnregistrationParams))
+            return {}
         return None
 
     async def _publish_diagnostics(self, params: dict[str, Any]) -> None:
@@ -122,6 +128,7 @@ def _build_file_state(text: str) -> tuple[_FileState | None, str]:
 
 def main() -> None:
     from fragments.lsp import completion, definition, hover, lifecycle, rename, semantic_tokens  # noqa: F401
+
     server.start_io()
 
 

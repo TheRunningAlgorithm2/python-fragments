@@ -5,6 +5,7 @@ Activate the venv with `source venv/bin/activate` as a standalone command — ne
 # Coding Style
 
 - **Never abbreviate names.** Write `original` not `orig`, `transpiled` not `trans`, `interpolation` not `interp`, `expression` not `expr`, `offset` not `off`, etc. Full words everywhere — variables, parameters, methods, and local names.
+- **Use guard clauses.** Prefer early returns over wrapping code in if blocks. Write `if not condition: return` rather than `if condition: { ... }`.
 
 # Overview
 

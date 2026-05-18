@@ -6,7 +6,7 @@ from lsprotocol import types
 
 from fragments import grammar
 from fragments.lsp.pyright import PyrightClient
-from fragments.lsp.server import FragmentsServer, _TOKEN_MODIFIERS, _TOKEN_TYPES, _build_file_state, _parse_error_to_diagnostic, server
+from fragments.lsp.server import FragmentsServer, _TOKEN_MODIFIERS, _TOKEN_TYPES, _build_file_state, _converter, _parse_error_to_diagnostic, server
 
 _DEBOUNCE_SECONDS = 0.15
 
@@ -56,18 +56,19 @@ async def did_open(language_server: FragmentsServer, params: types.DidOpenTextDo
         language_server._republish_diagnostics(document.uri)
     language_server._files[document.uri] = state
 
-    if language_server._pyright:
-        language_server._pyright.notify(
-            "textDocument/didOpen",
-            {
-                "textDocument": {
-                    "uri": document.uri,
-                    "languageId": document.language_id,
-                    "version": document.version,
-                    "text": content_for_pyright,
-                }
-            },
-        )
+    if not language_server._pyright:
+        return
+    language_server._pyright.notify(
+        "textDocument/didOpen",
+        {
+            "textDocument": {
+                "uri": document.uri,
+                "languageId": document.language_id,
+                "version": document.version,
+                "text": content_for_pyright,
+            }
+        },
+    )
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
@@ -86,14 +87,15 @@ def did_change(language_server: FragmentsServer, params: types.DidChangeTextDocu
             state, content_for_pyright = await asyncio.get_running_loop().run_in_executor(None, _build_file_state, text)
             language_server._parse_errors[uri] = None
             language_server._files[uri] = state
-            if language_server._pyright:
-                language_server._pyright.notify(
-                    "textDocument/didChange",
-                    {
-                        "textDocument": {"uri": uri, "version": params.text_document.version},
-                        "contentChanges": [{"text": content_for_pyright}],
-                    },
-                )
+            if not language_server._pyright:
+                return
+            language_server._pyright.notify(
+                "textDocument/didChange",
+                {
+                    "textDocument": {"uri": uri, "version": params.text_document.version},
+                    "contentChanges": [{"text": content_for_pyright}],
+                },
+            )
         except grammar.ParsingError as error:
             language_server._parse_errors[uri] = _parse_error_to_diagnostic(text, error)
             language_server._republish_diagnostics(uri)
@@ -112,5 +114,13 @@ def did_close(language_server: FragmentsServer, params: types.DidCloseTextDocume
     if existing:
         existing.cancel()
 
-    if language_server._pyright:
-        language_server._pyright.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
+    if not language_server._pyright:
+        return
+    language_server._pyright.notify("textDocument/didClose", {"textDocument": {"uri": uri}})
+
+
+@server.feature(types.WORKSPACE_DID_CHANGE_WATCHED_FILES)
+def did_change_watched_files(language_server: FragmentsServer, params: types.DidChangeWatchedFilesParams) -> None:
+    if not language_server._pyright:
+        return
+    language_server._pyright.notify("workspace/didChangeWatchedFiles", _converter.unstructure(params))
