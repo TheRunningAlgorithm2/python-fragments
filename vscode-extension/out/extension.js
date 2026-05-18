@@ -2,11 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
+const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
 const python_extension_1 = require("@vscode/python-extension");
 const node_1 = require("vscode-languageclient/node");
 let client;
+let serverWatcher;
 async function checkPylanceConflict() {
     const languageServer = vscode.workspace.getConfiguration("python").get("languageServer");
     if (languageServer === "None")
@@ -16,7 +18,22 @@ async function checkPylanceConflict() {
         await vscode.workspace.getConfiguration("python").update("languageServer", "None", vscode.ConfigurationTarget.Workspace);
     }
 }
+function watchForServer(serverPath, workspaceFolder, pythonApi) {
+    serverWatcher?.close();
+    const directory = path.dirname(serverPath);
+    if (!fs.existsSync(directory))
+        return;
+    serverWatcher = fs.watch(directory, () => {
+        if (fs.existsSync(serverPath)) {
+            serverWatcher?.close();
+            serverWatcher = undefined;
+            restart(workspaceFolder, pythonApi);
+        }
+    });
+}
 async function restart(workspaceFolder, pythonApi) {
+    serverWatcher?.close();
+    serverWatcher = undefined;
     if (client) {
         await client.stop();
         client = undefined;
@@ -31,6 +48,13 @@ async function restart(workspaceFolder, pythonApi) {
         if (!envPath?.path)
             return;
         serverPath = path.join(path.dirname(envPath.path), "fragments-lsp");
+    }
+    if (!fs.existsSync(serverPath)) {
+        const choice = await vscode.window.showWarningMessage("`fragments-lsp` was not found in the active Python environment. Run `pip install python-fragments[lsp]` to enable language features.", "Restart Once Installed", "Dismiss");
+        if (choice === "Restart Once Installed") {
+            watchForServer(serverPath, workspaceFolder, pythonApi);
+        }
+        return;
     }
     const serverOptions = {
         command: serverPath,
@@ -48,10 +72,11 @@ function activate(context) {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     python_extension_1.PythonExtension.api().then((pythonApi) => {
         restart(workspaceFolder, pythonApi);
-        context.subscriptions.push(pythonApi.environments.onDidChangeActiveEnvironmentPath(() => restart(workspaceFolder, pythonApi)));
+        context.subscriptions.push(pythonApi.environments.onDidChangeActiveEnvironmentPath(() => restart(workspaceFolder, pythonApi)), vscode.commands.registerCommand("fragments.restartLanguageServer", () => restart(workspaceFolder, pythonApi)));
     });
 }
 function deactivate() {
+    serverWatcher?.close();
     return client?.stop();
 }
 //# sourceMappingURL=extension.js.map

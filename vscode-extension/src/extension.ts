@@ -1,9 +1,11 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { PythonExtension } from "@vscode/python-extension";
 import { LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;
+let serverWatcher: fs.FSWatcher | undefined;
 
 async function checkPylanceConflict(): Promise<void> {
   const languageServer = vscode.workspace.getConfiguration("python").get<string>("languageServer");
@@ -20,7 +22,23 @@ async function checkPylanceConflict(): Promise<void> {
   }
 }
 
+function watchForServer(serverPath: string, workspaceFolder: vscode.WorkspaceFolder | undefined, pythonApi: PythonExtension): void {
+  serverWatcher?.close();
+  const directory = path.dirname(serverPath);
+  if (!fs.existsSync(directory)) return;
+  serverWatcher = fs.watch(directory, () => {
+    if (fs.existsSync(serverPath)) {
+      serverWatcher?.close();
+      serverWatcher = undefined;
+      restart(workspaceFolder, pythonApi);
+    }
+  });
+}
+
 async function restart(workspaceFolder: vscode.WorkspaceFolder | undefined, pythonApi: PythonExtension): Promise<void> {
+  serverWatcher?.close();
+  serverWatcher = undefined;
+
   if (client) {
     await client.stop();
     client = undefined;
@@ -34,6 +52,18 @@ async function restart(workspaceFolder: vscode.WorkspaceFolder | undefined, pyth
     const envPath = pythonApi.environments.getActiveEnvironmentPath(workspaceFolder?.uri);
     if (!envPath?.path) return;
     serverPath = path.join(path.dirname(envPath.path), "fragments-lsp");
+  }
+
+  if (!fs.existsSync(serverPath)) {
+    const choice = await vscode.window.showWarningMessage(
+      "`fragments-lsp` was not found in the active Python environment. Run `pip install python-fragments[lsp]` to enable language features.",
+      "Restart Once Installed",
+      "Dismiss"
+    );
+    if (choice === "Restart Once Installed") {
+      watchForServer(serverPath, workspaceFolder, pythonApi);
+    }
+    return;
   }
 
   const serverOptions: ServerOptions = {
@@ -58,11 +88,13 @@ export function activate(context: vscode.ExtensionContext): void {
   PythonExtension.api().then((pythonApi) => {
     restart(workspaceFolder, pythonApi);
     context.subscriptions.push(
-      pythonApi.environments.onDidChangeActiveEnvironmentPath(() => restart(workspaceFolder, pythonApi))
+      pythonApi.environments.onDidChangeActiveEnvironmentPath(() => restart(workspaceFolder, pythonApi)),
+      vscode.commands.registerCommand("fragments.restartLanguageServer", () => restart(workspaceFolder, pythonApi))
     );
   });
 }
 
 export function deactivate(): Thenable<void> | undefined {
+  serverWatcher?.close();
   return client?.stop();
 }

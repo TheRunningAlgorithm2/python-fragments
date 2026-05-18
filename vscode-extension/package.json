@@ -28,6 +28,13 @@
         }
       }
     ],
+    "commands": [
+      {
+        "command": "fragments.restartLanguageServer",
+        "title": "Restart Language Server",
+        "category": "Python Fragments"
+      }
+    ],
     "configuration": {
       "title": "Python Fragments",
       "properties": {
