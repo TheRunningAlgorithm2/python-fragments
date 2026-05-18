@@ -6,7 +6,7 @@ from typing import Any
 
 from lsprotocol import types
 from lsprotocol.converters import get_converter
-from pygls.server import LanguageServer
+from pygls.lsp.server import LanguageServer
 
 from fragments import grammar
 from fragments.ast_nodes import ASTFragment
@@ -40,7 +40,7 @@ class FragmentsServer(LanguageServer):
     async def _on_pyright_request(self, message: dict[str, Any]) -> object:
         if message["method"] == "workspace/configuration":
             items = message["params"]["items"]
-            editor_configs = await self.get_configuration_async(
+            editor_configs = await self.workspace_configuration_async(
                 types.ConfigurationParams(items=[types.ConfigurationItem(scope_uri=item.get("scopeUri"), section=item.get("section", "")) for item in items])
             )
             result: list[dict[str, object] | None] = []
@@ -79,7 +79,7 @@ class FragmentsServer(LanguageServer):
         parse_error = self._parse_errors.get(uri)
         if parse_error is not None:
             diagnostics.append(parse_error)
-        self.publish_diagnostics(uri, diagnostics)
+        self.text_document_publish_diagnostics(types.PublishDiagnosticsParams(uri=uri, diagnostics=diagnostics))
 
 
 server = FragmentsServer()

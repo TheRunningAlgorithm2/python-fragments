@@ -1,6 +1,6 @@
 # Running Python Commands
 
-Activate the venv with `source venv/bin/activate` before running Python or pip commands. Run it once at the start of a multi-command sequence rather than chaining it with `&&` on every line.
+Activate the venv with `source venv/bin/activate` as a standalone command — never chain it with `&&`. Run it once first, then run subsequent Python or pip commands separately.
 
 # Coding Style
 
