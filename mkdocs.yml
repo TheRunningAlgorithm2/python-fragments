@@ -4,13 +4,16 @@ repo_name: Python Fragments
 theme:
   name: material
   logo: assets/logo.svg
-  favicon: assets/logo.svg
+  favicon: assets/favicon.svg
+  custom_dir: docs/overrides
   palette:
     scheme: slate
   features:
     - search.suggest
     - search.highlight
     - search.share
+    - content.code.copy
+    - announce.dismiss
 
 plugins:
   - search:
@@ -32,6 +35,23 @@ markdown_extensions:
 
 extra_css:
   - extras.css
+
+copyright: Developed and maintained by <a href="https://www.therunningalgorithm.com">TheRunningAlgorithm</a>
+
+extra:
+  social:
+    - icon: fontawesome/solid/globe
+      link: https://www.therunningalgorithm.com
+      name: TheRunningAlgorithm
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/therunningalgorithm
+      name: LinkedIn
+    - icon: fontawesome/brands/github
+      link: https://github.com/TheRunningAlgorithm2
+      name: GitHub
+    - icon: fontawesome/solid/envelope
+      link: mailto:hello@therunningalgorithm.com
+      name: Contact
 
 nav:
   - Introduction: index.md

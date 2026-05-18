@@ -130,15 +130,15 @@
 
     Transpiled automatically at import time. No CLI, no watchers, no separate compile phase.
 
--   ### Native HTML
+-   ### Full IDE Support
 
-    Real tags, attributes, and structure. If you know HTML, you already know fragment syntax.
+    Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.
 
 -   ### Production Tested
 
     Used in production and developed in-house by [TheRunningAlgorithm](https://www.therunningalgorithm.com), exposed to thousands of live users prior to open source release
 
--   ### Full IDE support
+-   ### Long Term Support
 
     Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.
 
