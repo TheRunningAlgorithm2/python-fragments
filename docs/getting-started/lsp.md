@@ -13,11 +13,11 @@ Type checking, completions, hover docs, go-to-definition, and rename work out of
 - **Semantic tokens** — type-aware syntax highlighting for Python code inside fragments
 - **Syntax highlighting** — structural highlighting for `<>`, tags, and `{{ }}` interpolations
 - **Go-to-definition** — jump to the definition of a symbol
+- **Find references** — list all usages of a symbol
 - **Rename** — rename a symbol across all files in the workspace
 
 Not yet implemented:
 
-- **Find references** — list all usages of a symbol
 - **Fragments-specific syntax** — autocompletion and syntax highlighting for fragments blocks
 
 ## Installation
