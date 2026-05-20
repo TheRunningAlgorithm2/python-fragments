@@ -1,11 +1,13 @@
 # Running Python Commands
 
-Activate the venv with `source venv/bin/activate` as a standalone command — never chain it with `&&`. Run it once first, then run subsequent Python or pip commands separately.
+The venv is already activated. **Never run `. venv/bin/activate` or `source venv/bin/activate`.** Run Python commands directly. The venv is in `venv/` if you need to reference executables directly (`venv/bin/python`, `venv/bin/pip`, etc.).
 
 # Coding Style
 
 - **Never abbreviate names.** Write `original` not `orig`, `transpiled` not `trans`, `interpolation` not `interp`, `expression` not `expr`, `offset` not `off`, etc. Full words everywhere — variables, parameters, methods, and local names.
 - **Use guard clauses.** Prefer early returns over wrapping code in if blocks. Write `if not condition: return` rather than `if condition: { ... }`.
+- **Never use `# type: ignore` comments.** Fix the type error properly — correct the type annotation, use the right type, or restructure the code so the types are accurate. A `# type: ignore` is always a sign that the types are wrong, not that the type checker is wrong.
+- **Always add type annotations** You must always add type annotations, it is not acceptible to use `object` and `Any` should always be used sparingly. It is almost never correct.
 
 # Overview
 
@@ -22,21 +24,14 @@ This repo contains:
 
 # Docs
 
-The `docs/` directory contains full project documentation built with MkDocs. At the start of any new task, read whichever docs pages are relevant to what you're working on before making changes.
+The `docs/` directory contains full project documentation built with MkDocs. At the start of any new task, read every single page in docs.
 
 # LSP Architecture
 
-The LSP stack is: **Editor ↔ pygls `FragmentsServer` ↔ basedpyright subprocess**.
-
-`FragmentsServer` (`fragments/lsp/server.py`) is a pygls `LanguageServer` that:
-- Transpiles each file on open/change and stores a `_FileState` (original source, transpiled source, parsed `ASTModule`, precomputed line-start offset arrays)
-- Forwards all document requests to a `PyrightClient` (`fragments/lsp/pyright.py`) subprocess after remapping positions from original→transpiled coordinates
-- Remaps results (diagnostics, hover ranges, completion text edits, semantic tokens) back from transpiled→original coordinates before returning to the editor
-
 Key design decisions:
+
 - **No `[tool.basedpyright]` in `pyproject.toml`** — basedpyright config (type checking mode, paths, etc.) comes from the editor's normal workspace settings via `workspace/configuration` passthrough. The server forwards all `workspace/configuration` requests from basedpyright to the editor via `get_configuration_async`, only injecting `pythonPath`/`defaultInterpreterPath` for the `"python"` section.
 - **AST-based source map** — after `module.transpile()`, every AST node carries `source_start/source_end` and `transpiled_start/transpiled_end`. Position mapping walks the AST directly: `ASTPython` nodes map 1:1, `ASTInterpolation` nodes map their expression text 1:1 (skipping the `{{ }}` delimiters), and all fragment structure syntax is unmappable (returns `None`). `None` results silently drop tokens/diagnostics that live in untranslatable regions.
-- **Line-start offset arrays** — stored in `_FileState.__post_init__` for O(1) offset lookup and O(log N) position lookup via `bisect`.
 
 # VS Code Extension Architecture
 

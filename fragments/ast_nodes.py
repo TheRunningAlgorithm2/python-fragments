@@ -16,6 +16,7 @@ class ASTModule:
     __template__: str = "from fragments.html.elements import el, sequence, comment\n{}"
 
     def transpile(self, transpiled_start: int = 0) -> None:
+        """Build transpiled outputs for the module."""
         self.transpiled_start = transpiled_start
         transpiled_start += len(self.__template__) - 2
         for child in self.children:
@@ -26,9 +27,21 @@ class ASTModule:
         self.transpiled_content = self.__template__.format(children)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
+    def map_offset(self, offset: int) -> int | None:
+        for owner in self.children:
+            if owner.source_start < offset <= owner.source_end:
+                return owner.map_offset(offset)
+
+    def unmap_offset(self, offset: int) -> int | None:
+        for owner in self.children:
+            if owner.transpiled_start < offset <= owner.transpiled_end:
+                return owner.unmap_offset(offset)
+
 
 @dataclass(slots=True)
 class ASTPython:
+    """Build transpiled outputs for the vanilla Python code."""
+
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
     content: str
@@ -41,6 +54,20 @@ class ASTPython:
         self.transpiled_start = transpiled_start
         self.transpiled_content = self.content
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
+
+    def map_offset(self, offset: int) -> int | None:
+        if self.source_start < offset <= self.source_end:
+            specific_offset = offset - self.source_start
+            return self.transpiled_start + specific_offset
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        if self.transpiled_start < offset <= self.transpiled_end:
+            specific_offset = offset - self.transpiled_start
+            return self.source_start + specific_offset
+
+        return None
 
 
 @dataclass(slots=True)
@@ -67,6 +94,20 @@ class ASTFragment:
         self.transpiled_content = self.__template__.format(",".join(child.transpiled_content for child in self.children))
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
+    def map_offset(self, offset: int) -> int | None:
+        for owner in self.children:
+            if owner.source_start < offset <= owner.source_end:
+                return owner.map_offset(offset)
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        for owner in self.children:
+            if owner.transpiled_start < offset <= owner.transpiled_end:
+                return owner.unmap_offset(offset)
+
+        return None
+
 
 @dataclass(slots=True)
 class ASTHTMLElement:
@@ -77,7 +118,7 @@ class ASTHTMLElement:
     attributes: dict[str, "ASTHTMLAttribute"]
     if_attribute: "ASTInterpolation | None"
     for_attribute: "ASTInterpolation | None"
-    children: Sequence["ASTHTMLElement | ASTHTMLText | ASTInterpolation"]
+    children: Sequence["ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation"]
     one_line: bool
 
     transpiled_content: str = field(init=False)
@@ -152,6 +193,40 @@ class ASTHTMLElement:
         self.transpiled_content = self.__component_template__.format(self.name, children, attributes)
         self.transpiled_end = start + len(self.transpiled_content)
 
+    def map_offset(self, offset: int) -> int | None:
+        for attribute in self.attributes.values():
+            if attribute.source_start < offset <= attribute.source_end:
+                return attribute.map_offset(offset)
+
+        for child in self.children:
+            if child.source_start < offset <= child.source_end:
+                return child.map_offset(offset)
+
+        if self.if_attribute is not None and self.if_attribute.source_start < offset <= self.if_attribute.source_end:
+            return self.if_attribute.map_offset(offset)
+
+        if self.for_attribute is not None and self.for_attribute.source_start < offset <= self.for_attribute.source_end:
+            return self.for_attribute.map_offset(offset)
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        for attribute in self.attributes.values():
+            if attribute.transpiled_start < offset <= attribute.transpiled_end:
+                return attribute.unmap_offset(offset)
+
+        for child in self.children:
+            if child.transpiled_start < offset <= child.transpiled_end:
+                return child.unmap_offset(offset)
+
+        if self.if_attribute is not None and self.if_attribute.transpiled_start < offset <= self.if_attribute.transpiled_end:
+            return self.if_attribute.unmap_offset(offset)
+
+        if self.for_attribute is not None and self.for_attribute.transpiled_start < offset <= self.for_attribute.transpiled_end:
+            return self.for_attribute.unmap_offset(offset)
+
+        return None
+
 
 @dataclass(slots=True)
 class ASTHTMLComment:
@@ -170,6 +245,12 @@ class ASTHTMLComment:
         self.transpiled_start = transpiled_start
         self.transpiled_content = self.__template__.format(self.content)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
+
+    def map_offset(self, offset: int) -> None:
+        return None
+
+    def unmap_offset(self, offset: int) -> None:
+        return None
 
 
 @dataclass(slots=True)
@@ -201,6 +282,24 @@ class ASTHTMLAttribute:
         self.transpiled_content = self.__interpolation_template__.format(self.name, self.interpolation.transpiled_content)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
+    def map_offset(self, offset: int) -> int | None:
+        if self.interpolation is None:
+            return None
+
+        if self.interpolation.source_start < offset <= self.interpolation.source_end:
+            return self.interpolation.map_offset(offset)
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        if self.interpolation is None:
+            return None
+
+        if self.interpolation.transpiled_start < offset <= self.interpolation.transpiled_end:
+            return self.interpolation.unmap_offset(offset)
+
+        return None
+
 
 @dataclass(slots=True)
 class ASTHTMLText:
@@ -220,18 +319,40 @@ class ASTHTMLText:
         self.transpiled_start = transpiled_start
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
+    def map_offset(self, offset: int) -> None:
+        return None
+
+    def unmap_offset(self, offset: int) -> None:
+        return None
+
 
 @dataclass(slots=True)
 class ASTInterpolation:
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
     expression: str
+    leading_whitespace: int
+    trailing_whitespace: int
 
     transpiled_content: str = field(init=False)
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
     def transpile(self, transpiled_start: int) -> None:
-        self.transpiled_content = self.expression
+        self.transpiled_content = self.expression.strip()
         self.transpiled_start = transpiled_start
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
+
+    def map_offset(self, offset: int) -> int | None:
+        if self.source_start + 2 + self.leading_whitespace < offset <= self.source_end - 2 - self.trailing_whitespace:
+            specific_offset = offset - self.source_start - 2 - self.leading_whitespace
+            return self.transpiled_start + specific_offset
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        if self.transpiled_start < offset <= self.transpiled_end:
+            specific_offset = offset - self.transpiled_start
+            return self.source_start + specific_offset + 2 + self.leading_whitespace
+
+        return None

@@ -7,7 +7,6 @@ from fragments.source import Source
 PYTHON = r"([\s\S]*?)(?=<>)|[\s\S]*$"
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 STRING_CONTENTS = r"(.*?)(?=\")"
-INTERPOLATION_EXPRESSION = r"(.*?)(?= }})"
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-]*"
 HTML_TEXT = r"(.*?)(?=<)"
 
@@ -190,13 +189,14 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
 
 def expect_interpolation(source: Source) -> tuple[Source, ASTInterpolation]:
     """An interpolation block."""
+    INTERPOLATION_EXPRESSION = r"([\s\S]*?)(?= }})"
     source_start = source.offset
     source = expect_string(source, "{{")
-    source, _ = source.eat_whitespace()
+    source, leading_whitespace = source.eat_whitespace()
     source, expression = expect_regex(source, INTERPOLATION_EXPRESSION, "expression")
-    source, _ = source.eat_whitespace()
+    source, trailing_whitespace = source.eat_whitespace()
     source = expect_string(source, "}}")
-    return source, ASTInterpolation(source_start, source.offset, expression)
+    return source, ASTInterpolation(source_start, source.offset, expression, len(leading_whitespace), len(trailing_whitespace))
 
 
 def expect_html_text(source: Source) -> tuple[Source, ASTHTMLText]:

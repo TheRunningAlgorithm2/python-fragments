@@ -71,10 +71,10 @@ def test_full():
                     "div",
                     {"classes": ASTHTMLAttribute(-1, -1, "classes", "p-3 rounded-lg bg-gray-800", None)},
                     None,
-                    ASTInterpolation(-1, -1, "item in user.items"),
+                    ASTInterpolation(-1, -1, "item in user.items", 1, 1),
                     [
-                        ASTHTMLElement(-1, -1, "p", {"style": ASTHTMLAttribute(-1, -1, "style", None, ASTInterpolation(-1, -1, '{"color": "red"}'))}, None, None, [ASTInterpolation(-1, -1, "item.name")], False),
-                        ASTHTMLElement(-1, -1, "p", {}, ASTInterpolation(-1, -1, "item.description"), None, [ASTInterpolation(-1, -1, "item.description")], False),
+                        ASTHTMLElement(-1, -1, "p", {"style": ASTHTMLAttribute(-1, -1, "style", None, ASTInterpolation(-1, -1, '{"color": "red"}', 1, 1))}, None, None, [ASTInterpolation(-1, -1, "item.name", 1, 1)], False),
+                        ASTHTMLElement(-1, -1, "p", {}, ASTInterpolation(-1, -1, "item.description", 1, 1), None, [ASTInterpolation(-1, -1, "item.description", 1, 1)], False),
                         ASTHTMLElement(-1, -1, "p", {}, None, None, [ASTHTMLText(-1, -1, "This is an item")], False),
                         ASTHTMLElement(-1, -1, "input", {}, None, None, [], True),
                     ],

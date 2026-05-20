@@ -4,10 +4,11 @@ from cattrs.converters import Converter
 import asyncio
 import json
 import sys
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 from lsprotocol.converters import get_converter
 from lsprotocol import types
 from typing import cast
+from fragments.lsp.types import HandlerFunc
 
 _CONVERTER: Converter = get_converter()
 
@@ -28,7 +29,7 @@ class MessageMethodNotKnownError(Exception):
 class MessageQueue:
     reader: asyncio.StreamReader
     writer: Writable
-    handlers: dict[str, Callable[[MESSAGE_TYPES], Any]]
+    handlers: dict[str, HandlerFunc]
     next_id: int = 1
     pending: dict[int | str, tuple[str, asyncio.Future[RESPONSES]]] = field(default_factory=dict)
 
@@ -83,7 +84,7 @@ class MessageQueue:
                 handler = self.handlers.get(method)
                 if handler is None:
                     continue
-                asyncio.create_task(handler(message))
+                asyncio.create_task(handler(cast(REQUESTS | NOTIFICATIONS, message)))
                 continue
 
             message_id = getattr(message, "id", None)
@@ -92,6 +93,14 @@ class MessageQueue:
                 future.set_result(cast(RESPONSES, message))
                 del self.pending[message_id]
                 continue
+
+    def respond(self, request_id: int | str, response: RESPONSES) -> None:
+        """Send a response to an incoming request."""
+        response.id = request_id
+        message_json: dict[str, Any] = _CONVERTER.unstructure(response)
+        message_content_bytes: bytes = json.dumps(message_json).encode()
+        message_bytes: bytes = f"Content-Length: {len(message_content_bytes)}\r\n\r\n".encode() + message_content_bytes
+        self.writer.write(message_bytes)
 
     def notify(self, message: NOTIFICATIONS) -> None:
         """Send a notification (no response expected)."""

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-fragments"
-version = "0.5"
+version = "0.6"
 description = "Modern HTML template rendering in Python"
 authors = [{ name = "The Running Algorithm", email = "services@therunningalgorithm.info" }]
 readme = "README.md"
@@ -15,7 +15,6 @@ dependencies = []
 [project.optional-dependencies]
 lsp = [
     "basedpyright>=1.39.0",
-    "pygls>=2.0.0",
 ]
 dev = [
     "pytest>=8.4.1",
@@ -23,7 +22,7 @@ dev = [
 
 [project.scripts]
 fragments = "fragments.cli:main"
-fragments-lsp = "fragments.lsp.server:main"
+fragments-lsp = "fragments.lsp.based_proxy:main"
 
 [tool.setuptools.packages.find]
 include = ["fragments*"]

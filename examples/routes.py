@@ -7,6 +7,7 @@ from datetime import datetime
 
 router = APIRouter()
 
+
 @dataclass
 class Post:
     title: str
@@ -16,7 +17,6 @@ POSTS: list[Post] = [
     Post("Python Fragments", datetime(2026, 5, 17)),
     Post("The Running Algorithm", datetime(2026, 5, 12)),
 ]
-
 
 def PostCard(children: list[str], post: Post) -> str:
     return <>
