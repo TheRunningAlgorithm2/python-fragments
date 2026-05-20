@@ -27,11 +27,7 @@ def publish_parse_error_diagnostics(uri: str) -> None:
     parse_error = based_proxy.PARSE_ERRORS.get(uri)
     if parse_error is not None:
         diagnostics.append(parse_error)
-    based_proxy.proxy().notify(
-        types.PublishDiagnosticsNotification(
-            params=types.PublishDiagnosticsParams(uri=uri, diagnostics=diagnostics)
-        )
-    )
+    based_proxy.proxy().notify(types.PublishDiagnosticsNotification(params=types.PublishDiagnosticsParams(uri=uri, diagnostics=diagnostics)))
 
 
 @handle_from_client(types.INITIALIZE)
@@ -58,7 +54,7 @@ async def did_open(message: REQUESTS | NOTIFICATIONS) -> None:
         file_state = FileState(document.text)
         based_proxy.PARSE_ERRORS[document.uri] = None
         FILE_STATES[document.uri] = file_state
-        document.text = file_state.transpiled
+        document.text = file_state.original if file_state.vanilla else file_state.transpiled
     except grammar.ParsingError as error:
         based_proxy.PARSE_ERRORS[document.uri] = _parse_error_diagnostic(document.text, error)
         publish_parse_error_diagnostics(document.uri)
@@ -79,7 +75,7 @@ async def did_change(message: REQUESTS | NOTIFICATIONS) -> None:
         file_state = FileState(text)
         based_proxy.PARSE_ERRORS[uri] = None
         FILE_STATES[uri] = file_state
-        notification.params.content_changes = [types.TextDocumentContentChangeWholeDocument(text=file_state.transpiled)]
+        notification.params.content_changes = [types.TextDocumentContentChangeWholeDocument(text=file_state.original if file_state.vanilla else file_state.transpiled)]
         if had_parse_error:
             publish_parse_error_diagnostics(uri)
     except grammar.ParsingError as error:
