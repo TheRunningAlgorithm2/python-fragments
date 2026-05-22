@@ -1,7 +1,7 @@
 ---
 name: update-docs
 description: Check over the docs and make necessary updates.
-allowed-tools: Bash(git diff*) Bash(find *) Bash(xargs cat)
+allowed-tools: Bash(git diff*) Bash(find *) Bash(xargs cat) Bash(python benchmarks/transpilation/benchmark.py) Bash(python benchmarks/calls/benchmark.py)
 ---
 
 # Context
@@ -16,4 +16,4 @@ The supplied context contains all of the current changes. Look through them, and
 
 Make the following additional checks:
 
-1. Check that `docs/benchmarks/index.md` is up to date - re-calculate if necessary
+1. Check that `docs/benchmarks/index.md` is up to date according to !`python benchmarks/transpilation/benchmark.py` and !`python benchmarks/calls/benchmark.py`

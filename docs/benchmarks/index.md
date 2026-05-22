@@ -16,10 +16,10 @@ python benchmarks/transpilation/benchmark.py
 
 ```
 Transpiler benchmark (1000 iterations × 5 repeats)
-  Average per call: 110.2 µs
+  Average per call: 121.0 µs
 ```
 
-A simple file like this can be transpiled fully 10,000 times per second. At a typing speed of 400 characters per minute (fast, 6 characters per second, 1 character every 0.15 seconds) the file you're working on can be transpiled 1,500 times per character typed - this will never be the limiting factor in LSP or IDE performance.
+A simple file like this can be transpiled fully 8,000 times per second. At a typing speed of 400 characters per minute (fast, 6 characters per second, 1 character every 0.15 seconds) the file you're working on can be transpiled 1,200 times per character typed - this will never be the limiting factor in LSP or IDE performance.
 
 ## Calls
 
@@ -33,7 +33,7 @@ python benchmarks/calls/benchmark.py
 
 ```
 Call benchmark (10000 iterations × 5 repeats)
-  Fragments:            10.8 µs
+  Fragments:            10.6 µs
   String interpolation:  0.7 µs
 ```
 
