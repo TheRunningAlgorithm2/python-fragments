@@ -7,7 +7,7 @@ from fragments.source import Source
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 STRING_CONTENTS = r"(.*?)(?=\")"
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-]*"
-HTML_TEXT = r"(.*?)(?=<)"
+HTML_TEXT = r"(.*?)(?=<|{{)"
 
 
 class ParsingError(Exception):
