@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Python Fragments",
   "scopeName": "source.python.fragments",
-  "injectionSelector": "L:source.python",
+  "injectionSelector": "L:source.python - (comment, string)",
   "patterns": [
     { "include": "#fragment" }
   ],

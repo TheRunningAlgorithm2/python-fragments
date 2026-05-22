@@ -7,8 +7,8 @@ allowed-tools: Bash(git diff*) Bash(find *) Bash(xargs cat)
 # Context
 
 1. Current git diff !`git diff`
-2. All docs files !`!find ./docs -type f -name "*.md"`
-3. All the docs content !`!find ./docs -type f -name "*.md" | xargs cat`
+2. All docs files !`find ./docs -type f -name "*.md"`
+3. All the docs content !`find ./docs -type f -name "*.md" | xargs cat`
 
 # Introduction
 

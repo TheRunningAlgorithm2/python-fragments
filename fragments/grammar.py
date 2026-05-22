@@ -4,7 +4,6 @@ import re
 from fragments.ast_nodes import ASTFragment, ASTHTMLAttribute, ASTHTMLComment, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
 from fragments.source import Source
 
-PYTHON = r"([\s\S]*?)(?=<>)|[\s\S]*$"
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 STRING_CONTENTS = r"(.*?)(?=\")"
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-]*"
@@ -56,8 +55,29 @@ def expect_module(source: Source) -> tuple[Source, ASTModule]:
 
 def expect_python(source: Source) -> tuple[Source, ASTPython]:
     """Vanilla Python code."""
+    PYTHON = r"([\s\S]*?)(?=<>|'''|\"\"\"|'|\"|#)|[\s\S]*$"
     source_start: int = source.offset
-    source, python = expect_regex(source, PYTHON, "python source")
+    python: str = ""
+
+    while not source.remaining().startswith("<>") and not source.at_end():
+        source, next_python = expect_regex(source, PYTHON, "python source")
+        python += next_python
+        if source.remaining().startswith('"""'):
+            source, next_python = expect_regex(source, r'"""([\s\S]*?)(?:"""|$)', "python source")
+            python += next_python
+        elif source.remaining().startswith("'''"):
+            source, next_python = expect_regex(source, r"'''([\s\S]*?)(?:'''|$)", "python source")
+            python += next_python
+        elif source.remaining().startswith("'"):
+            source, next_python = expect_regex(source, r"'(?:[^'\\]|\\.)*(?:'|$)", "python source")
+            python += next_python
+        elif source.remaining().startswith('"'):
+            source, next_python = expect_regex(source, r'"(?:[^"\\]|\\.)*(?:"|$)', "python source")
+            python += next_python
+        elif source.remaining().startswith("#"):
+            source, next_python = expect_regex(source, r"#[^\n]*", "python source")
+            python += next_python
+
     return source, ASTPython(source_start, source.offset, python)
 
 
