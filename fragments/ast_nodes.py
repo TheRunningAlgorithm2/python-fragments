@@ -29,12 +29,12 @@ class ASTModule:
 
     def map_offset(self, offset: int) -> int | None:
         for owner in self.children:
-            if owner.source_start < offset <= owner.source_end:
+            if owner.source_start <= offset <= owner.source_end:
                 return owner.map_offset(offset)
 
     def unmap_offset(self, offset: int) -> int | None:
         for owner in self.children:
-            if owner.transpiled_start < offset <= owner.transpiled_end:
+            if owner.transpiled_start <= offset <= owner.transpiled_end:
                 return owner.unmap_offset(offset)
 
 
@@ -56,14 +56,14 @@ class ASTPython:
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
-        if self.source_start < offset <= self.source_end:
+        if self.source_start <= offset <= self.source_end:
             specific_offset = offset - self.source_start
             return self.transpiled_start + specific_offset
 
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
-        if self.transpiled_start < offset <= self.transpiled_end:
+        if self.transpiled_start <= offset <= self.transpiled_end:
             specific_offset = offset - self.transpiled_start
             return self.source_start + specific_offset
 
@@ -96,14 +96,14 @@ class ASTFragment:
 
     def map_offset(self, offset: int) -> int | None:
         for owner in self.children:
-            if owner.source_start < offset <= owner.source_end:
+            if owner.source_start <= offset <= owner.source_end:
                 return owner.map_offset(offset)
 
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
         for owner in self.children:
-            if owner.transpiled_start < offset <= owner.transpiled_end:
+            if owner.transpiled_start <= offset <= owner.transpiled_end:
                 return owner.unmap_offset(offset)
 
         return None
@@ -195,34 +195,34 @@ class ASTHTMLElement:
 
     def map_offset(self, offset: int) -> int | None:
         for attribute in self.attributes.values():
-            if attribute.source_start < offset <= attribute.source_end:
+            if attribute.source_start <= offset <= attribute.source_end:
                 return attribute.map_offset(offset)
 
         for child in self.children:
-            if child.source_start < offset <= child.source_end:
+            if child.source_start <= offset <= child.source_end:
                 return child.map_offset(offset)
 
-        if self.if_attribute is not None and self.if_attribute.source_start < offset <= self.if_attribute.source_end:
+        if self.if_attribute is not None and self.if_attribute.source_start <= offset <= self.if_attribute.source_end:
             return self.if_attribute.map_offset(offset)
 
-        if self.for_attribute is not None and self.for_attribute.source_start < offset <= self.for_attribute.source_end:
+        if self.for_attribute is not None and self.for_attribute.source_start <= offset <= self.for_attribute.source_end:
             return self.for_attribute.map_offset(offset)
 
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
         for attribute in self.attributes.values():
-            if attribute.transpiled_start < offset <= attribute.transpiled_end:
+            if attribute.transpiled_start <= offset <= attribute.transpiled_end:
                 return attribute.unmap_offset(offset)
 
         for child in self.children:
-            if child.transpiled_start < offset <= child.transpiled_end:
+            if child.transpiled_start <= offset <= child.transpiled_end:
                 return child.unmap_offset(offset)
 
-        if self.if_attribute is not None and self.if_attribute.transpiled_start < offset <= self.if_attribute.transpiled_end:
+        if self.if_attribute is not None and self.if_attribute.transpiled_start <= offset <= self.if_attribute.transpiled_end:
             return self.if_attribute.unmap_offset(offset)
 
-        if self.for_attribute is not None and self.for_attribute.transpiled_start < offset <= self.for_attribute.transpiled_end:
+        if self.for_attribute is not None and self.for_attribute.transpiled_start <= offset <= self.for_attribute.transpiled_end:
             return self.for_attribute.unmap_offset(offset)
 
         return None
@@ -286,7 +286,7 @@ class ASTHTMLAttribute:
         if self.interpolation is None:
             return None
 
-        if self.interpolation.source_start < offset <= self.interpolation.source_end:
+        if self.interpolation.source_start <= offset <= self.interpolation.source_end:
             return self.interpolation.map_offset(offset)
 
         return None
@@ -295,7 +295,7 @@ class ASTHTMLAttribute:
         if self.interpolation is None:
             return None
 
-        if self.interpolation.transpiled_start < offset <= self.interpolation.transpiled_end:
+        if self.interpolation.transpiled_start <= offset <= self.interpolation.transpiled_end:
             return self.interpolation.unmap_offset(offset)
 
         return None
@@ -344,14 +344,14 @@ class ASTInterpolation:
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
-        if self.source_start + 2 + self.leading_whitespace < offset <= self.source_end - 2 - self.trailing_whitespace:
+        if self.source_start + 2 + self.leading_whitespace <= offset <= self.source_end - 2 - self.trailing_whitespace:
             specific_offset = offset - self.source_start - 2 - self.leading_whitespace
             return self.transpiled_start + specific_offset
 
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
-        if self.transpiled_start < offset <= self.transpiled_end:
+        if self.transpiled_start <= offset <= self.transpiled_end:
             specific_offset = offset - self.transpiled_start
             return self.source_start + specific_offset + 2 + self.leading_whitespace
 
