@@ -389,7 +389,8 @@ class ASTHTMLAttribute:
         self.transpiled_start = transpiled_start
 
         if self.string_literal is not None:
-            self.transpiled_content = self.__template__.format(self.name, self.string_literal)
+            escaped_literal = self.string_literal.replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r").replace('"', '"')
+            self.transpiled_content = self.__template__.format(self.name, escaped_literal)
             self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
             return
 
@@ -435,7 +436,7 @@ class ASTHTMLText:
     __template__: str = '"{}"'
 
     def transpile(self, transpiled_start: int) -> None:
-        self.transpiled_content = self.__template__.format(self.text)
+        self.transpiled_content = self.__template__.format(self.text.replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r").replace('"', '"'))
         self.transpiled_start = transpiled_start
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 

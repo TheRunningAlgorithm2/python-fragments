@@ -94,6 +94,26 @@ def test_html_element_interpolation_attribute():
     ]))
 
 
+def test_html_attribute_multiline_string_literal_escaped_in_transpile():
+    source = Source.from_string('<><div class="foo\nbar">text</div></>')
+    _, fragment = grammar.expect_fragment(source)
+    fragment.transpile(0)
+    element = fragment.children[0]
+    assert isinstance(element, ASTHTMLElement)
+    assert "\\n" in element.attributes["class"].transpiled_content
+    assert "\n" not in element.attributes["class"].transpiled_content
+
+
+def test_html_attribute_tab_escaped_in_transpile():
+    source = Source.from_string('<><div class="foo\tbar">text</div></>')
+    _, fragment = grammar.expect_fragment(source)
+    fragment.transpile(0)
+    element = fragment.children[0]
+    assert isinstance(element, ASTHTMLElement)
+    assert "\\t" in element.attributes["class"].transpiled_content
+    assert "\t" not in element.attributes["class"].transpiled_content
+
+
 def test_html_element_boolean_attribute():
     source = Source.from_string("<><input disabled /></>")
     source, fragment = grammar.expect_fragment(source)
