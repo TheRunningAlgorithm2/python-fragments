@@ -18,7 +18,7 @@ from fragments.ast_nodes import (
 from fragments.source import Source
 
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
-HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-:.]*"
+HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"(.*?)(?=<|{{)"
 
 
