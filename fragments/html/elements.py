@@ -9,7 +9,7 @@ def el(
     name: str,
     children: list[str],
     oneline: bool,
-    **attributes: dict[str, Any],
+    attributes: dict[str, Any],
 ) -> str:
     tag_contents = [
         name,

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,6 +21,12 @@ class Source:
 
     def at_end(self) -> bool:
         return self.offset == len(self.content)
+
+    def starts_with(self, string: str) -> bool:
+        return self.remaining().startswith(string)
+
+    def start_matches(self, reg: str) -> bool:
+        return re.match(reg, self.remaining()) is not None
 
     @classmethod
     def from_string(cls, string: str) -> "Source":

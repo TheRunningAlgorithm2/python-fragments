@@ -25,7 +25,7 @@ async def index() -> str:
 **After transpilation — what the interpreter sees:**
 
 ```python
-from fragments.html.elements import el, sequence
+from fragments.html.elements import el, sequence, comment
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
@@ -33,7 +33,7 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return sequence([el("h1",["Hello, world!"],oneline=False,),el("p",["Welcome to Fragments."],oneline=False,)])
+    return sequence([el("h1",["Hello, world!"],oneline=False,attributes={}),el("p",["Welcome to Fragments."],oneline=False,attributes={})])
 ```
 
 **Endpoint return value** — a plain Python string:
@@ -44,7 +44,7 @@ async def index() -> str:
 
 The transpiler does two things:
 
-1. Prepends `from fragments.html.elements import el, sequence` at the top of the file.
+1. Prepends `from fragments.html.elements import el, sequence, comment` at the top of the file.
 2. Replaces every `<> ... </>` block with a call to `sequence(...)`.
 
 ## Dynamic content — `for` and `if`
@@ -72,7 +72,7 @@ async def post_list() -> str:
 @app.get("/posts", response_class=HTMLResponse)
 async def post_list() -> str:
     posts = get_posts()
-    return sequence([el("h1",["Posts"],oneline=False,),sequence([el("article",[el("h2",[post.title],oneline=False,),el("p",[post.summary],oneline=False,)],oneline=False,) for post in posts])])
+    return sequence([el("h1",["Posts"],oneline=False,attributes={}),sequence([el("article",[el("h2",[post.title],oneline=False,attributes={}),el("p",[post.summary],oneline=False,attributes={})],oneline=False,attributes={}) for post in posts])])
 ```
 
 **Result** (with two posts in the list):
@@ -103,7 +103,7 @@ return <>
 **After:**
 
 ```python
-return sequence([Layout([el("h1",["Posts"],oneline=False,),sequence([PostCard([],post=post) for post in posts])],title="My Blog")])
+return sequence([Layout([el("h1",["Posts"],oneline=False,attributes={}),sequence([PostCard([],post=post) for post in posts])],title="My Blog")])
 ```
 
 `Layout` and `PostCard` are ordinary Python functions — the transpiler just calls them with children as the first positional argument and tag attributes as keyword arguments. How those kwargs are received is up to the component:

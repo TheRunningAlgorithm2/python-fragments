@@ -102,8 +102,8 @@ def test_import_prefix_not_mappable():
     state = make_state("x = 1\n")
     for k in range(IMPORT_PREFIX_LEN):
         assert state.ast_module.unmap_offset(k) is None
-    # IMPORT_PREFIX_LEN itself is excluded by exclusive-start; first mappable transpiled offset is +1
-    assert state.ast_module.unmap_offset(IMPORT_PREFIX_LEN) is None
+    # IMPORT_PREFIX_LEN maps to source offset 0 (start of the Python content)
+    assert state.ast_module.unmap_offset(IMPORT_PREFIX_LEN) == 0
     assert state.ast_module.unmap_offset(IMPORT_PREFIX_LEN + 1) == 1
 
 
@@ -166,3 +166,114 @@ def test_multiple_fragments_python_between():
         t = state.ast_module.map_offset(between_start + k)
         assert t is not None
         assert state.transpiled[t] == between[k]
+
+
+# ---------------------------------------------------------------------------
+# HTML element attribute interpolation mapping
+# ---------------------------------------------------------------------------
+
+
+def test_html_attribute_interpolation_is_mappable():
+    source = "<><div class={{ expr }}>text</div></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3  # skip '{{ '
+    expr = "expr"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None, f"offset {expr_start + k} inside attribute interpolation should be mappable"
+        assert state.transpiled[t] == expr[k]
+
+
+def test_html_attribute_interpolation_round_trip():
+    source = "<><div class={{ expr }}>text</div></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3
+    expr = "expr"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None
+        assert state.ast_module.unmap_offset(t) == expr_start + k
+
+
+# ---------------------------------------------------------------------------
+# Control node interpolation mapping (if / for)
+# ---------------------------------------------------------------------------
+
+
+def test_if_interpolation_is_mappable():
+    source = "<><div if={{ condition }}>text</div></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3  # skip '{{ '
+    expr = "condition"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None, f"offset {expr_start + k} inside if-interpolation should be mappable"
+        assert state.transpiled[t] == expr[k]
+
+
+def test_if_interpolation_round_trip():
+    source = "<><div if={{ condition }}>text</div></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3
+    expr = "condition"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None
+        assert state.ast_module.unmap_offset(t) == expr_start + k
+
+
+def test_for_interpolation_is_mappable():
+    source = "<><li for={{ item in items }}>{{ item }}</li></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3  # first {{ is the for attribute
+    expr = "item in items"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None, f"offset {expr_start + k} inside for-interpolation should be mappable"
+        assert state.transpiled[t] == expr[k]
+
+
+def test_for_interpolation_round_trip():
+    source = "<><li for={{ item in items }}>{{ item }}</li></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3
+    expr = "item in items"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None
+        assert state.ast_module.unmap_offset(t) == expr_start + k
+
+
+# ---------------------------------------------------------------------------
+# Component argument interpolation mapping
+# ---------------------------------------------------------------------------
+
+
+def test_component_argument_interpolation_is_mappable():
+    source = "<><MyComp value={{ expr }} /></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3  # skip '{{ '
+    expr = "expr"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None, f"offset {expr_start + k} inside component argument should be mappable"
+        assert state.transpiled[t] == expr[k]
+
+
+def test_component_argument_interpolation_round_trip():
+    source = "<><MyComp value={{ expr }} /></>"
+    state = make_state(source)
+    expr_start = source.index("{{") + 3
+    expr = "expr"
+
+    for k in range(1, len(expr)):
+        t = state.ast_module.map_offset(expr_start + k)
+        assert t is not None
+        assert state.ast_module.unmap_offset(t) == expr_start + k

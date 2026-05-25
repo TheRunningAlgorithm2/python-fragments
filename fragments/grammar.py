@@ -1,11 +1,23 @@
 from re import Match
 import re
 
-from fragments.ast_nodes import ASTFragment, ASTHTMLAttribute, ASTHTMLComment, ASTHTMLElement, ASTHTMLText, ASTInterpolation, ASTModule, ASTPython
+from fragments.ast_nodes import (
+    ASTComponent,
+    ASTComponentArgument,
+    ASTControlNode,
+    ASTFragment,
+    ASTHTMLAttribute,
+    ASTHTMLComment,
+    ASTHTMLElement,
+    ASTHTMLText,
+    ASTInterpolation,
+    ASTModule,
+    ASTPython,
+    ASTHTMLChild,
+)
 from fragments.source import Source
 
 IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
-STRING_CONTENTS = r"(.*?)(?=\")"
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_-]*"
 HTML_TEXT = r"(.*?)(?=<|{{)"
 
@@ -86,12 +98,12 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
     source_start: int = source.offset
     source = expect_string(source, "<>")
 
-    children: list[ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation] = []
+    children: list[ASTHTMLChild] = []
     while not source.remaining().startswith("</>"):
         source, _ = source.eat_whitespace()
         if source.remaining().startswith("</>"):
             break
-        source, child = expect_expression(source)
+        source, child = expect_child(source)
         children.append(child)
 
     source, _ = source.eat_whitespace()
@@ -101,13 +113,17 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
     return source, ASTFragment(source_start, source_end, children)
 
 
-def expect_expression(source: Source) -> tuple[Source, ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation]:
+def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
     """Any HTML / functional block that might appear as part of the fragment."""
     if source.remaining().startswith("<!--"):
         source, html_comment = expect_html_comment(source)
         return source, html_comment
 
-    if source.remaining().startswith("<"):
+    if source.start_matches(r"<[A-Z]"):
+        source, component = expect_component(source)
+        return source, component
+
+    if source.starts_with("<"):
         source, html_element = expect_html_element(source)
         return source, html_element
 
@@ -119,6 +135,54 @@ def expect_expression(source: Source) -> tuple[Source, ASTHTMLElement | ASTHTMLC
     return source, html_text
 
 
+def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlNode[ASTComponent]]:
+    """An pseudo-element that actually resolves into a user-defined function call."""
+    source_start = source.offset
+    source = expect_string(source, "<")
+    source, name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
+    source, _ = source.eat_whitespace()
+
+    arguments: dict[str, ASTComponentArgument] = {}
+    while not source.starts_with(">") and not source.starts_with("/>"):
+        argument_source_start = source.offset
+        source, argument_name = expect_regex(source, r"[a-zA-Z][a-zA-Z0-9_]*", "python argument name")
+        source = expect_string(source, "=")
+        string_literal, interpolation = None, None
+        if source.start_matches("['\"]"):
+            source, string_literal = expect_string_literal(source)
+        elif source.starts_with("{{"):
+            source, interpolation = expect_interpolation(source)
+        arguments[argument_name] = ASTComponentArgument(argument_source_start, source.offset, argument_name, string_literal, interpolation)
+        source, _ = source.eat_whitespace()
+
+    if_argument = arguments.pop("if") if "if" in arguments else None
+    for_argument = arguments.pop("for") if "for" in arguments else None
+
+    if source.starts_with("/>"):
+        source = expect_string(source, "/>")
+        return source, ASTControlNode[ASTComponent].wrap_child(
+            ASTComponent(source_start, source.offset, name, arguments, []),
+            if_argument.interpolation if if_argument is not None else None,
+            for_argument.interpolation if for_argument is not None else None,
+        )
+
+    source = expect_string(source, ">")
+    source, children = expect_children(source)
+    source = expect_string(source, "</")
+    source, closing_name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
+    source, _ = source.eat_whitespace()
+    source = expect_string(source, ">")
+
+    if name != closing_name:
+        raise ParsingError(f"Element closed ({closing_name!r}) is not the same as currently opened element ({name!r})", source.offset)
+
+    return source, ASTControlNode[ASTComponent].wrap_child(
+        ASTComponent(source_start=source_start, source_end=source.offset, name=name, arguments=arguments, children=children),
+        if_argument.interpolation if if_argument is not None else None,
+        for_argument.interpolation if for_argument is not None else None,
+    )
+
+
 def expect_html_comment(source: Source) -> tuple[Source, ASTHTMLComment]:
     source_start = source.offset
     source = expect_string(source, "<!--")
@@ -127,7 +191,7 @@ def expect_html_comment(source: Source) -> tuple[Source, ASTHTMLComment]:
     return source, ASTHTMLComment(source_start, source.offset, content)
 
 
-def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
+def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement | ASTControlNode[ASTHTMLElement]]:
     """An HTML element that may appear in the fragment tree."""
     element_source_start = source.offset
     source = expect_string(source, "<")
@@ -142,14 +206,13 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
         if not source.remaining().startswith("="):
             attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, None)
             attributes[attribute_name] = attribute
+            source, _ = source.eat_whitespace()
             continue
         source = expect_string(source, "=")
 
         if source.remaining().startswith('"'):
-            source = expect_string(source, '"')
-            source, attribute_value = expect_regex(source, STRING_CONTENTS, "attribute value")
-            source = expect_string(source, '"')
-            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, attribute_value, None)
+            source, string_literal = expect_string_literal(source)
+            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, string_literal, None)
             attributes[attribute_name] = attribute
         elif source.remaining().startswith("{{"):
             source, interpolation = expect_interpolation(source)
@@ -163,27 +226,16 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
 
     if source.remaining().startswith("/>"):
         source = expect_string(source, "/>")
-        html_element = ASTHTMLElement(
-            element_source_start,
-            source.offset,
-            name,
-            attributes,
+        html_element = ASTControlNode[ASTHTMLElement].wrap_child(
+            ASTHTMLElement(element_source_start, source.offset, name, attributes, [], True),
             if_attribute.interpolation if if_attribute is not None else None,
             for_attribute.interpolation if for_attribute is not None else None,
-            [],
-            True,
         )
         return source, html_element
 
     source = expect_string(source, ">")
     source, _ = source.eat_whitespace()
-
-    children: list[ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation] = []
-    while not source.remaining().startswith("</"):
-        source, child = expect_expression(source)
-        children.append(child)
-        source, _ = source.eat_whitespace()
-
+    source, children = expect_children(source)
     source = expect_string(source, "</")
     source, _ = source.eat_whitespace()
     source, closing_name = expect_regex(source, IDENTIFIER, "element name")
@@ -194,17 +246,22 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement]:
     source, _ = source.eat_whitespace()
     source = expect_string(source, ">")
 
-    html_element = ASTHTMLElement(
-        element_source_start,
-        source.offset,
-        name,
-        attributes,
+    html_element = ASTControlNode[ASTHTMLElement].wrap_child(
+        ASTHTMLElement(element_source_start, source.offset, name, attributes, children, False),
         if_attribute.interpolation if if_attribute is not None else None,
         for_attribute.interpolation if for_attribute is not None else None,
-        children,
-        False,
     )
     return source, html_element
+
+
+def expect_children(source: Source) -> tuple[Source, list[ASTHTMLChild]]:
+    children: list[ASTHTMLChild] = []
+    source, _ = source.eat_whitespace()
+    while not source.remaining().startswith("</"):
+        source, child = expect_child(source)
+        children.append(child)
+        source, _ = source.eat_whitespace()
+    return source, children
 
 
 def expect_interpolation(source: Source) -> tuple[Source, ASTInterpolation]:
@@ -224,3 +281,7 @@ def expect_html_text(source: Source) -> tuple[Source, ASTHTMLText]:
     source_start = source.offset
     source, text = expect_regex(source, HTML_TEXT, "text")
     return source, ASTHTMLText(source_start, source.offset, text)
+
+
+def expect_string_literal(source: Source) -> tuple[Source, str]:
+    return expect_regex(source, r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'', "string literal")
