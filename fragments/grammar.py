@@ -17,7 +17,6 @@ from fragments.ast_nodes import (
 )
 from fragments.source import Source
 
-IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"(.*?)(?=<|{{)"
 
@@ -238,7 +237,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement | ASTCon
     source, children = expect_children(source)
     source = expect_string(source, "</")
     source, _ = source.eat_whitespace()
-    source, closing_name = expect_regex(source, IDENTIFIER, "element name")
+    source, closing_name = expect_regex(source, HTML_IDENTIFIER, "element name")
 
     if name != closing_name:
         raise ParsingError(f"Element closed ({closing_name!r}) is not the same as currently opened element ({name!r})", source.offset)
