@@ -18,6 +18,7 @@ from fragments.ast_nodes import (
 from fragments.source import Source
 
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
+HTML_ATTRIBUTE_NAME = r"[a-zA-Z:-_][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"(.*?)(?=<|{{)"
 
 
@@ -201,7 +202,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement | ASTCon
     attributes: dict[str, ASTHTMLAttribute] = {}
     while not (source.remaining().startswith(">") or source.remaining().startswith("/>")):
         attribute_source_start = source.offset
-        source, attribute_name = expect_regex(source, HTML_IDENTIFIER, "attribute name")
+        source, attribute_name = expect_regex(source, HTML_ATTRIBUTE_NAME, "attribute name")
         if not source.remaining().startswith("="):
             attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, None)
             attributes[attribute_name] = attribute
