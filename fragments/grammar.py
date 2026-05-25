@@ -19,7 +19,7 @@ from fragments.source import Source
 
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
 HTML_ATTRIBUTE_NAME = r"[a-zA-Z:-_][a-zA-Z0-9_:.-]*"
-HTML_TEXT = r"(.*?)(?=<|{{)"
+HTML_TEXT = r"([\s\S]*?)(?=<|{{)"
 
 
 class ParsingError(Exception):

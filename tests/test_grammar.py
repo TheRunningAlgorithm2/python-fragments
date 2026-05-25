@@ -295,6 +295,53 @@ def test_lowercase_not_parsed_as_component():
 
 
 # ---------------------------------------------------------------------------
+# HTML text
+# ---------------------------------------------------------------------------
+
+
+def test_html_text_single_line():
+    source = Source.from_string("<><p>hello world</p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "hello world")], False)
+    ]))
+
+
+def test_html_text_multiline():
+    source = Source.from_string("<><p>hello\nworld</p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "hello\nworld")], False)
+    ]))
+
+
+def test_html_text_multiline_before_interpolation():
+    source = Source.from_string("<><p>hello\n{{ name }}</p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "p", {}, [
+            ASTHTMLText(-1, -1, "hello\n"),
+            ASTInterpolation(-1, -1, "name", 1, 1),
+        ], False)
+    ]))
+
+
+def test_html_text_multiline_before_child_element():
+    source = Source.from_string("<><p>hello\n<span>world</span></p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "p", {}, [
+            ASTHTMLText(-1, -1, "hello\n"),
+            ASTHTMLElement(-1, -1, "span", {}, [ASTHTMLText(-1, -1, "world")], False),
+        ], False)
+    ]))
+
+
+# ---------------------------------------------------------------------------
 # Full integration (updated for new AST structure)
 # ---------------------------------------------------------------------------
 

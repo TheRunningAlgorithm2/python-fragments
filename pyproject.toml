@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-fragments"
-version = "0.16"
+version = "0.17"
 description = "Modern HTML template rendering in Python"
 authors = [{ name = "The Running Algorithm", email = "services@therunningalgorithm.info" }]
 readme = "README.md"
