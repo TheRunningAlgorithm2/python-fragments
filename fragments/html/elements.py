@@ -1,13 +1,17 @@
-from typing import Any
+from typing import Any, Protocol
 
 
-def sequence(children: list[str]) -> str:
-    return "".join(children)
+class Stringable(Protocol):
+    def __str__(self) -> str: ...
+
+
+def sequence(children: list[str | Stringable]) -> str:
+    return "".join(str(child) for child in children)
 
 
 def el(
     name: str,
-    children: list[str],
+    children: list[str | Stringable],
     oneline: bool,
     attributes: dict[str, Any],
 ) -> str:
@@ -23,7 +27,7 @@ def el(
     if oneline:
         return f"""<{tag_contents_string} />"""
 
-    children_string = "".join(str(child) for child in children)
+    children_string = sequence(children)
 
     return f"""<{tag_contents_string}>{children_string}</{name}>"""
 
