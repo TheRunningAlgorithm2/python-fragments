@@ -1,17 +1,14 @@
-from typing import Any, Protocol
+from typing import Any
+from fragments.types import Children
 
 
-class Stringable(Protocol):
-    def __str__(self) -> str: ...
-
-
-def sequence(children: list[str | Stringable]) -> str:
+def sequence(children: Children) -> str:
     return "".join(str(child) for child in children)
 
 
 def el(
     name: str,
-    children: list[str | Stringable],
+    children: Children,
     oneline: bool,
     attributes: dict[str, Any],
 ) -> str:
