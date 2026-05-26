@@ -1,6 +1,7 @@
 import json
 from typing import Any
 from fragments.types import Children
+import html
 
 
 def sequence(children: Children) -> str:
@@ -46,7 +47,7 @@ def attribute_to_string(name: str, value: Any) -> str:
         value = list(value)
 
     if isinstance(value, dict) or isinstance(value, list):
-        value = json.dumps(value)
+        value = html.escape(json.dumps(value))
 
     if isinstance(value, bool):
         value = str(value).lower()
