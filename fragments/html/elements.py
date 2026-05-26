@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from fragments.types import Children
 
@@ -34,7 +35,23 @@ def comment(content: str) -> str:
 
 
 def attributes_to_string(attributes: dict[str, Any]) -> str:
-    return " ".join("=".join([key, f'"{value}"']) if value is not None else key for key, value in attributes.items())
+    return " ".join(attribute_to_string(name, value) for name, value in attributes.items())
+
+
+def attribute_to_string(name: str, value: Any) -> str:
+    if value is None:
+        return name
+
+    if isinstance(value, tuple):
+        value = list(value)
+
+    if isinstance(value, dict) or isinstance(value, list):
+        value = json.dumps(value)
+
+    if isinstance(value, bool):
+        value = str(value).lower()
+
+    return f'{name}="{value}"'
 
 
 def classes_to_string(classes: list[str] | str) -> str:
