@@ -15,7 +15,7 @@ def el(
 ) -> str:
     tag_contents = [
         name,
-        classes_to_string(attributes.pop("classes")) if "classes" in attributes else None,
+        className_to_string(attributes.pop("className")) if "className" in attributes else None,
         style_to_string(attributes.pop("style")) if "style" in attributes else None,
         attributes_to_string(attributes) if attributes is not None else None,
     ]
@@ -54,11 +54,11 @@ def attribute_to_string(name: str, value: Any) -> str:
     return f'{name}="{value}"'
 
 
-def classes_to_string(classes: list[str] | str) -> str:
-    if isinstance(classes, list):
-        inner = " ".join(classes)
+def className_to_string(contents: list[str] | str) -> str:
+    if isinstance(contents, list):
+        inner = " ".join(contents)
     else:
-        inner = classes
+        inner = contents
 
     return f'class="{inner}"'
 
