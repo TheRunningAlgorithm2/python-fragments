@@ -269,7 +269,9 @@ def expect_children(source: Source) -> tuple[Source, list[ASTHTMLChild]]:
     while not source.remaining().startswith("</"):
         source, child = expect_child(source)
         children.append(child)
-        source, _ = source.eat_whitespace()
+        source_after_whitespace, _ = source.eat_whitespace()
+        if not source_after_whitespace.remaining().startswith("{{"):
+            source = source_after_whitespace
     return source, children
 
 

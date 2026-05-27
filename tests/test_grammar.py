@@ -362,6 +362,19 @@ def test_html_text_multiline_before_child_element():
     ]))
 
 
+def test_whitespace_between_adjacent_interpolations_is_preserved():
+    source = Source.from_string("<><p>{{ a }} {{ b }}</p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "p", {}, [
+            ASTInterpolation(-1, -1, "a", 1, 1),
+            ASTHTMLText(-1, -1, " "),
+            ASTInterpolation(-1, -1, "b", 1, 1),
+        ], False)
+    ]))
+
+
 # ---------------------------------------------------------------------------
 # Full integration (updated for new AST structure)
 # ---------------------------------------------------------------------------
