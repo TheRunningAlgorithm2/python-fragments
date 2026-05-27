@@ -16,6 +16,8 @@ Type checking, completions, hover docs, go-to-definition, and rename work out of
 - **Find references** — list all usages of a symbol
 - **Rename** — rename a symbol across all files in the workspace
 
+All features work on component names and attribute names in component tags — go-to-definition on `<Layout>` jumps to the function, rename propagates across all usages, hover shows parameter types.
+
 Not yet implemented:
 
 - **Fragments-specific syntax** — autocompletion and syntax highlighting for fragments blocks

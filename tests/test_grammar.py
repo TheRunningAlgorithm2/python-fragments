@@ -4,6 +4,7 @@ from fragments import grammar
 from fragments.ast_nodes import (
     ASTComponent,
     ASTComponentArgument,
+    ASTComponentName,
     ASTControlNode,
     ASTFragment,
     ASTHTMLAttribute,
@@ -209,7 +210,7 @@ def test_component_self_closing():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {}, [])
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [])
     ]))
 
 
@@ -218,7 +219,7 @@ def test_component_with_double_quote_argument():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "name": ASTComponentArgument(-1, -1, "name", '"hello"', None)
         }, [])
     ]))
@@ -229,7 +230,7 @@ def test_component_with_single_quote_argument():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "name": ASTComponentArgument(-1, -1, "name", "'hello'", None)
         }, [])
     ]))
@@ -240,7 +241,7 @@ def test_component_with_interpolation_argument():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "value": ASTComponentArgument(-1, -1, "value", None, ASTInterpolation(-1, -1, "expr", 1, 1))
         }, [])
     ]))
@@ -251,7 +252,7 @@ def test_component_with_children():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {}, [
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [
             ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "text")], False)
         ])
     ]))
@@ -262,7 +263,7 @@ def test_component_whitespace_stripped_from_children():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, "MyComp", {}, [
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [
             ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "text")], False)
         ])
     ]))
@@ -276,7 +277,7 @@ def test_component_with_if():
         ASTControlNode(-1, -1,
             ASTInterpolation(-1, -1, "condition", 1, 1),
             None,
-            ASTComponent(-1, -1, "MyComp", {}, []),
+            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, []),
         )
     ]))
 
@@ -289,7 +290,7 @@ def test_component_with_for():
         ASTControlNode(-1, -1,
             None,
             ASTInterpolation(-1, -1, "item in items", 1, 1),
-            ASTComponent(-1, -1, "MyComp", {}, []),
+            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, []),
         )
     ]))
 

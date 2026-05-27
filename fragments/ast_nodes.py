@@ -241,7 +241,7 @@ class ASTComponent:
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
 
-    name: str
+    name: "ASTComponentName"
     arguments: dict[str, "ASTComponentArgument"]
     children: Sequence["ASTHTMLChild"]
 
@@ -253,7 +253,8 @@ class ASTComponent:
 
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
-        transpiled_start = transpiled_start + len(self.name) + 2
+        self.name.transpile(self.transpiled_start)
+        transpiled_start = self.name.transpiled_end + 2
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end + 1
@@ -262,7 +263,7 @@ class ASTComponent:
         children = ",".join(child.transpiled_content for child in self.children)
 
         if len(self.arguments) == 0:
-            self.transpiled_content = self.__template__.format(self.name, children, "")
+            self.transpiled_content = self.__template__.format(self.name.transpiled_content, children, "")
             self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
             return
 
@@ -272,10 +273,13 @@ class ASTComponent:
             transpiled_start = attribute.transpiled_end + 1
 
         attributes = ",".join(attribute.transpiled_content for attribute in self.arguments.values())
-        self.transpiled_content = self.__template__.format(self.name, children, attributes)
+        self.transpiled_content = self.__template__.format(self.name.transpiled_content, children, attributes)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
+        if self.name.source_start < offset < self.name.source_end:
+            return self.name.map_offset(offset)
+
         for attribute in self.arguments.values():
             if attribute.source_start <= offset <= attribute.source_end:
                 return attribute.map_offset(offset)
@@ -287,6 +291,9 @@ class ASTComponent:
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
+        if self.name.transpiled_start < offset < self.name.transpiled_end:
+            return self.name.unmap_offset(offset)
+
         for attribute in self.arguments.values():
             if attribute.transpiled_start <= offset <= attribute.transpiled_end:
                 return attribute.unmap_offset(offset)
@@ -294,6 +301,37 @@ class ASTComponent:
         for child in self.children:
             if child.transpiled_start <= offset <= child.transpiled_end:
                 return child.unmap_offset(offset)
+
+        return None
+
+
+@dataclass(slots=True)
+class ASTComponentName:
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    name: str
+
+    transpiled_content: str = field(init=False)
+    transpiled_start: int = field(init=False)
+    transpiled_end: int = field(init=False)
+
+    def transpile(self, offset: int) -> None:
+        self.transpiled_start = offset
+        self.transpiled_content = self.name
+        self.transpiled_end = offset + len(self.name)
+
+    def map_offset(self, offset: int) -> int | None:
+        if self.source_start <= offset <= self.source_end:
+            specific_offset = offset - self.source_start
+            return self.transpiled_start + specific_offset
+
+        return None
+
+    def unmap_offset(self, offset: int) -> int | None:
+        if self.transpiled_start <= offset <= self.transpiled_end:
+            specific_offset = offset - self.transpiled_start
+            return self.source_start + specific_offset
 
         return None
 
@@ -327,6 +365,10 @@ class ASTComponentArgument:
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
+        if self.source_start <= offset <= self.source_start + len(self.name):
+            specific_offset = offset - self.source_start
+            return self.transpiled_start + specific_offset
+
         if self.interpolation is None:
             return None
 
@@ -336,6 +378,10 @@ class ASTComponentArgument:
         return None
 
     def unmap_offset(self, offset: int) -> int | None:
+        if self.transpiled_start <= offset <= self.transpiled_start + len(self.name):
+            specific_offset = offset - self.transpiled_start
+            return self.source_start + specific_offset
+
         if self.interpolation is None:
             return None
 

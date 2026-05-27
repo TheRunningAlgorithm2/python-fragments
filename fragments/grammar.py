@@ -4,6 +4,7 @@ import re
 from fragments.ast_nodes import (
     ASTComponent,
     ASTComponentArgument,
+    ASTComponentName,
     ASTControlNode,
     ASTFragment,
     ASTHTMLAttribute,
@@ -140,7 +141,7 @@ def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlN
     """An pseudo-element that actually resolves into a user-defined function call."""
     source_start = source.offset
     source = expect_string(source, "<")
-    source, name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
+    source, name = expect_component_name(source)
     source, _ = source.eat_whitespace()
 
     arguments: dict[str, ASTComponentArgument] = {}
@@ -170,18 +171,25 @@ def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlN
     source = expect_string(source, ">")
     source, children = expect_children(source)
     source = expect_string(source, "</")
-    source, closing_name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
+    source, closing_name = expect_component_name(source)
     source, _ = source.eat_whitespace()
     source = expect_string(source, ">")
 
-    if name != closing_name:
-        raise ParsingError(f"Element closed ({closing_name!r}) is not the same as currently opened element ({name!r})", source.offset)
+    if name.name != closing_name.name:
+        raise ParsingError(f"Element closed ({closing_name.name}) is not the same as currently opened element ({name.name})", source.offset)
 
     return source, ASTControlNode[ASTComponent].wrap_child(
         ASTComponent(source_start=source_start, source_end=source.offset, name=name, arguments=arguments, children=children),
         if_argument.interpolation if if_argument is not None else None,
         for_argument.interpolation if for_argument is not None else None,
     )
+
+
+def expect_component_name(source: Source) -> tuple[Source, ASTComponentName]:
+    """An identifier corresponding with a Python function."""
+    source_start = source.offset
+    source, name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
+    return source, ASTComponentName(source_start, source.offset, name)
 
 
 def expect_html_comment(source: Source) -> tuple[Source, ASTHTMLComment]:
