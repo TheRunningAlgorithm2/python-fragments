@@ -91,7 +91,8 @@ class ASTFragment:
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end + 1
-        transpiled_start -= 1
+        if len(self.children) > 0:
+            transpiled_start -= 1
 
         self.transpiled_content = self.__template__.format(",".join(child.transpiled_content for child in self.children))
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
@@ -133,7 +134,7 @@ class ASTHTMLElement:
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end + 1
-        if self.children:
+        if len(self.children) > 0:
             transpiled_start -= 1
         children = ",".join(child.transpiled_content for child in self.children)
         oneline_offset = len(str(self.one_line))
@@ -406,7 +407,8 @@ class ASTHTMLComment:
 
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
-        self.transpiled_content = self.__template__.format(self.content)
+        escaped_content = self.content.replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r").replace('"', '\\"')
+        self.transpiled_content = self.__template__.format(escaped_content)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> None:

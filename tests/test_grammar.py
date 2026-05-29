@@ -46,6 +46,16 @@ def test_comment_multiline():
     ]))
 
 
+def test_comment_multiline_escaped_in_transpile():
+    source = Source.from_string("<><!-- line one\nline two --></>")
+    _, fragment = grammar.expect_fragment(source)
+    fragment.transpile(0)
+    comment = fragment.children[0]
+    assert isinstance(comment, ASTHTMLComment)
+    assert "\\n" in comment.transpiled_content
+    assert "\n" not in comment.transpiled_content
+
+
 def test_comment_inside_element():
     source = Source.from_string("<><div><!-- note --></div></>")
     source, fragment = grammar.expect_fragment(source)
