@@ -385,6 +385,39 @@ def test_whitespace_between_adjacent_interpolations_is_preserved():
     ]))
 
 
+def test_interpolation_no_trailing_whitespace():
+    source = Source.from_string("<><NotificationBar user={{ user}} /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
+            "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 1, 0))
+        }, [])
+    ]))
+
+
+def test_interpolation_no_leading_whitespace():
+    source = Source.from_string("<><NotificationBar user={{user }} /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
+            "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 0, 1))
+        }, [])
+    ]))
+
+
+def test_interpolation_no_whitespace():
+    source = Source.from_string("<><NotificationBar user={{user}} /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
+            "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 0, 0))
+        }, [])
+    ]))
+
+
 # ---------------------------------------------------------------------------
 # Full integration (updated for new AST structure)
 # ---------------------------------------------------------------------------

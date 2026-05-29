@@ -277,7 +277,7 @@ def expect_children(source: Source) -> tuple[Source, list[ASTHTMLChild]]:
 
 def expect_interpolation(source: Source) -> tuple[Source, ASTInterpolation]:
     """An interpolation block."""
-    INTERPOLATION_EXPRESSION = r"([\s\S]*?)(?= }})"
+    INTERPOLATION_EXPRESSION = r"([\s\S]*?)(?=\s*}})"
     source_start = source.offset
     source = expect_string(source, "{{")
     source, leading_whitespace = source.eat_whitespace()
