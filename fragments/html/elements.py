@@ -18,7 +18,7 @@ def el(
         name,
         className_to_string(attributes.pop("className")) if "className" in attributes else None,
         style_to_string(attributes.pop("style")) if "style" in attributes else None,
-        attributes_to_string(attributes) if attributes is not None else None,
+        attributes_to_string(attributes) if attributes else None,
     ]
     tag_contents = [item for item in tag_contents if item is not None]
     tag_contents_string = " ".join(tag_contents)
