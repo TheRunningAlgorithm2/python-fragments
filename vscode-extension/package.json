@@ -24,7 +24,8 @@
           "source.python"
         ],
         "embeddedLanguages": {
-          "meta.embedded.html.fragment": "html"
+          "meta.embedded.html.fragment": "html",
+          "meta.embedded.js.alpine": "javascript"
         }
       }
     ],

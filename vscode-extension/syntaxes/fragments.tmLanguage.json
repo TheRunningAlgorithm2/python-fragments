@@ -48,6 +48,7 @@
       },
       "patterns": [
         { "include": "#interpolation" },
+        { "include": "#alpine-attribute" },
         {
           "match": "\"[^\"]*\"",
           "name": "string.quoted.double.fragment"
@@ -56,6 +57,22 @@
           "match": "[a-zA-Z_][a-zA-Z0-9_-]*",
           "name": "entity.other.attribute-name.fragment"
         }
+      ]
+    },
+    "alpine-attribute": {
+      "begin": "(x-[a-zA-Z0-9_:-]*)\\s*(=)\\s*(\")",
+      "end": "(\")",
+      "beginCaptures": {
+        "1": { "name": "entity.other.attribute-name.alpine.fragment" },
+        "2": { "name": "punctuation.separator.key-value.html" },
+        "3": { "name": "punctuation.definition.string.begin.html" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.string.end.html" }
+      },
+      "contentName": "meta.embedded.js.alpine",
+      "patterns": [
+        { "include": "source.js" }
       ]
     },
     "interpolation": {
