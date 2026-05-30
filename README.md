@@ -2,7 +2,7 @@
 
 > **This package is in early development and not yet stable. The API may change without notice between releases.**
 
-Production-ready, modern HTML template rendering in Python — no build step, no template files, and native HTML awareness out of the box.
+Modern HTML template rendering in Python — no build step, no template files, and native HTML awareness out of the box.
 
 ```python
 from fragments import loader  # isort: skip
@@ -25,6 +25,12 @@ async def index() -> str:
         </Layout>
     </>
 ```
+
+## IDE Support
+
+Type checking, completions, hover docs, go-to-definition, rename, and semantic highlighting — all working inside fragment syntax.
+
+![VS Code completions demo](docs/assets/vscode.gif)
 
 ## Installation
 
