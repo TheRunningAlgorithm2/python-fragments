@@ -8,7 +8,7 @@ version = "0.28"
 description = "Modern HTML template rendering in Python"
 authors = [{ name = "The Running Algorithm", email = "services@therunningalgorithm.info" }]
 readme = "README.md"
-license = { text = "Proprietary" }
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
 dependencies = []
 

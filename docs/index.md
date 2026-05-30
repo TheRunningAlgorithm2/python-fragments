@@ -1,6 +1,6 @@
 # Python Fragments
 
-**Production-ready, modern HTML template rendering in Python** - no build step, no template files, and native HTML awareness out of the box.
+**Modern HTML template rendering in Python** - no build step, no template files, and native HTML awareness out of the box.
 
 === "Plain Python"
 
@@ -140,7 +140,7 @@
 
 -   ### Long Term Support
 
-    Type checking, hover, completions, go-to-definition, rename, and semantic highlighting via a built-in language server and VS Code extension.
+    Actively maintained by [TheRunningAlgorithm](https://www.therunningalgorithm.com), who use it in production.
 
 </div>
 

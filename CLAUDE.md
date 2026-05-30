@@ -1,7 +1,3 @@
-# Running Python Commands
-
-The venv is already activated. **Never run `. venv/bin/activate` or `source venv/bin/activate`.** Run Python commands directly. The venv is in `venv/` if you need to reference executables directly (`venv/bin/python`, `venv/bin/pip`, etc.).
-
 # Coding Style
 
 - **Never abbreviate names.** Write `original` not `orig`, `transpiled` not `trans`, `interpolation` not `interp`, `expression` not `expr`, `offset` not `off`, etc. Full words everywhere — variables, parameters, methods, and local names.
@@ -24,7 +20,7 @@ This repo contains:
 
 # Docs
 
-The `docs/` directory contains full project documentation built with MkDocs. At the start of any new task, read every single page in docs.
+The `docs/` directory contains full project documentation built with MkDocs. Refer to it as the canonical reference for project behaviour and design decisions.
 
 # LSP Architecture
 

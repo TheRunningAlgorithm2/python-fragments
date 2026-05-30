@@ -39,3 +39,7 @@ from fragments import loader  # isort: skip
 ```
 
 Any `.py` file containing `<>` is transpiled automatically. Nothing else to configure.
+
+## Feedback and feature requests
+
+Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/TheRunningAlgorithm2/python-fragments/issues). The project is not currently accepting code contributions.
