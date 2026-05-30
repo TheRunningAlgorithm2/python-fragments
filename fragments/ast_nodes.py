@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Sequence
 
-type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode | ASTDoctype
+type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode | ASTDoctype | ASTChildrenSlot
 
 
 @dataclass(slots=True)
@@ -15,7 +15,7 @@ class ASTModule:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __template__: str = "from fragments.html.elements import el, sequence, comment\n{}"
+    __template__: str = "from fragments.html.elements import el, _sequence, comment\n{}"
 
     def transpile(self, transpiled_start: int = 0) -> None:
         """Build transpiled outputs for the module."""
@@ -83,18 +83,15 @@ class ASTFragment:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __template__: str = """sequence([{}])"""
-
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
-        transpiled_start += 10
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end + 1
-        if len(self.children) > 0:
+        if self.children:
             transpiled_start -= 1
 
-        self.transpiled_content = self.__template__.format(",".join(child.transpiled_content for child in self.children))
+        self.transpiled_content = "+".join(child.transpiled_content for child in self.children) if self.children else '""'
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
@@ -126,26 +123,28 @@ class ASTHTMLElement:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __element_template__: str = """el("{}",[{}],oneline={},attributes={})"""
+    __element_template__: str = """el("{}",{},oneline={},attributes={})"""
 
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
-        transpiled_start = transpiled_start + len(self.name) + 7
+        transpiled_start = transpiled_start + len(self.name) + 6  # el("name",
         for child in self.children:
             child.transpile(transpiled_start)
             transpiled_start = child.transpiled_end + 1
-        if len(self.children) > 0:
+        if self.children:
             transpiled_start -= 1
-        children = ",".join(child.transpiled_content for child in self.children)
+        children_expr = "+".join(child.transpiled_content for child in self.children) if self.children else '""'
+        if not self.children:
+            transpiled_start += 2  # ""
         oneline_offset = len(str(self.one_line))
-        transpiled_start += 10 + oneline_offset + 12 + 1  # ],oneline= + oneline + ,attributes= + {
+        transpiled_start += 9 + oneline_offset + 12 + 1  # ,oneline= + oneline + ,attributes= + {
         for attribute in self.attributes.values():
             attribute.transpile(transpiled_start)
             transpiled_start = attribute.transpiled_end + 1
         transpiled_start -= 1
 
         attributes = "{" + ",".join(attribute.transpiled_content for attribute in self.attributes.values()) + "}"
-        self.transpiled_content = self.__element_template__.format(self.name, children, self.one_line, attributes)
+        self.transpiled_content = self.__element_template__.format(self.name, children_expr, self.one_line, attributes)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
     def map_offset(self, offset: int) -> int | None:
@@ -184,18 +183,18 @@ class ASTControlNode[T: (ASTHTMLElement, ASTComponent)]:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __for_template__: str = "sequence([{} for {}])"
-    __if_template__: str = "{} if {} else ''"
+    __for_template__: str = "_sequence([{} for {}])"
+    __if_template__: str = "({} if {} else '')"
 
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
         if self.for_interpolation is not None:
-            self.child.transpile(transpiled_start + 10)  # sequence([
+            self.child.transpile(transpiled_start + 11)  # _sequence([
             self.for_interpolation.transpile(self.child.transpiled_end + 5)  # child +  for
             self.transpiled_content = self.__for_template__.format(self.child.transpiled_content, self.for_interpolation.transpiled_content)
         elif self.if_interpolation is not None:
-            self.child.transpile(transpiled_start)
-            self.if_interpolation.transpile(self.child.transpiled_end + 4)  # child +  if
+            self.child.transpile(transpiled_start + 1)  # ( before child
+            self.if_interpolation.transpile(self.child.transpiled_end + 4)  # " if "
             self.transpiled_content = self.__if_template__.format(self.child.transpiled_content, self.if_interpolation.transpiled_content)
         self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
 
@@ -250,25 +249,27 @@ class ASTComponent:
     transpiled_start: int = field(init=False)
     transpiled_end: int = field(init=False)
 
-    __template__: str = """{}([{}],{})"""
+    __template__: str = """{}({},{})"""
 
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
         self.name.transpile(self.transpiled_start)
-        transpiled_start = self.name.transpiled_end + 2
+        transpiled_start = self.name.transpiled_end + 1  # (
         for child in self.children:
             child.transpile(transpiled_start)
-            transpiled_start = child.transpiled_end + 1
+            transpiled_start = child.transpiled_end + 1  # + between children
         if self.children:
             transpiled_start -= 1
-        children = ",".join(child.transpiled_content for child in self.children)
+        children = "+".join(child.transpiled_content for child in self.children) if self.children else '""'
+        if not self.children:
+            transpiled_start += 2  # ""
 
         if len(self.arguments) == 0:
             self.transpiled_content = self.__template__.format(self.name.transpiled_content, children, "")
             self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
             return
 
-        transpiled_start += 2
+        transpiled_start += 1  # , before arguments
         for attribute in self.arguments.values():
             attribute.transpile(transpiled_start)
             transpiled_start = attribute.transpiled_end + 1
@@ -545,4 +546,25 @@ class ASTInterpolation:
             specific_offset = offset - self.transpiled_start
             return self.source_start + specific_offset + 2 + self.leading_whitespace
 
+        return None
+
+
+@dataclass(slots=True)
+class ASTChildrenSlot:
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    transpiled_content: str = field(init=False)
+    transpiled_start: int = field(init=False)
+    transpiled_end: int = field(init=False)
+
+    def transpile(self, transpiled_start: int) -> None:
+        self.transpiled_start = transpiled_start
+        self.transpiled_content = "children"
+        self.transpiled_end = transpiled_start + len("children")
+
+    def map_offset(self, offset: int) -> None:
+        return None
+
+    def unmap_offset(self, offset: int) -> None:
         return None

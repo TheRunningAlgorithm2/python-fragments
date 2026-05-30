@@ -2,6 +2,7 @@ from re import Match
 import re
 
 from fragments.ast_nodes import (
+    ASTChildrenSlot,
     ASTComponent,
     ASTComponentArgument,
     ASTComponentName,
@@ -22,7 +23,6 @@ from fragments.source import Source
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
 HTML_ATTRIBUTE_NAME = r"[a-zA-Z:-_][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"([\s\S]*?)(?=<|{{)"
-CHILDREN_META_COMPONENT = r"<[\S]*Children\.\.\.[\S]*/>"
 
 
 class ParsingError(Exception):
@@ -116,6 +116,12 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
     return source, ASTFragment(source_start, source_end, children)
 
 
+def expect_children_slot(source: Source) -> tuple[Source, ASTChildrenSlot]:
+    source_start = source.offset
+    source = expect_string(source, "<Children... />")
+    return source, ASTChildrenSlot(source_start, source.offset)
+
+
 def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
     """Any HTML / functional block that might appear as part of the fragment."""
     if source.remaining().startswith("<!DOCTYPE html>"):
@@ -125,6 +131,10 @@ def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
     if source.remaining().startswith("<!--"):
         source, html_comment = expect_html_comment(source)
         return source, html_comment
+
+    if source.remaining().startswith("<Children... />"):
+        source, children_slot = expect_children_slot(source)
+        return source, children_slot
 
     if source.start_matches(r"<[A-Z]"):
         source, component = expect_component(source)

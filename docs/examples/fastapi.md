@@ -34,10 +34,10 @@ class Post:
 Two components: a full-page layout wrapper, and a post card used in the listing.
 
 ```python
-from typing import Any
+from fragments.types import Children
 from models import Post
 
-def Layout(children: list[str], title: str = "My Blog") -> str:
+def Layout(children: Children, title: str = "My Blog") -> str:
     return <>
         <html lang="en">
             <head>
@@ -51,14 +51,14 @@ def Layout(children: list[str], title: str = "My Blog") -> str:
                     <a href="/" classes="site-title">My Blog</a>
                 </header>
                 <main>
-                    {{ children }}
+                    <Children... />
                 </main>
             </body>
         </html>
     </>
 
 
-def PostCard(children: list[str], post: Post) -> str:
+def PostCard(children: Children, post: Post) -> str:
     return <>
         <article classes="post-card">
             <h2>

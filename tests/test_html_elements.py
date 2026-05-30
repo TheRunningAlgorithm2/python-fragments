@@ -22,10 +22,10 @@ def test_className_string_passthrough():
 
 
 def test_el_className_list_attribute():
-    result = el("div", ["content"], False, {"className": ["foo", "bar"]})
+    result = el("div", "content", False, {"className": ["foo", "bar"]})
     assert result == '<div class="foo bar">content</div>'
 
 
 def test_el_className_empty_list():
-    result = el("div", [], True, {"className": []})
+    result = el("div", "", True, {"className": []})
     assert result == '<div class="" />'

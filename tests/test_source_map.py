@@ -1,7 +1,7 @@
 from fragments.lsp.file_state import FileState
 from lsprotocol import types
 
-IMPORT_PREFIX = "from fragments.html.elements import el, sequence, comment\n"
+IMPORT_PREFIX = "from fragments.html.elements import el, _sequence, comment\n"
 IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)
 
 

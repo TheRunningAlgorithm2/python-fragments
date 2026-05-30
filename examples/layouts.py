@@ -1,7 +1,7 @@
-from typing import Any
+from fragments.types import Children
 
 
-def Base(children: str, title: str, header: str) -> str:
+def Base(children: Children, title: str, header: str) -> str:
     return <>
         <html>
             <head>
@@ -9,7 +9,7 @@ def Base(children: str, title: str, header: str) -> str:
             </head>
             <body>
                 <h1>{{ header }}</h1>
-                {{ sequence(children) }}
+                <Children... />
             </body>
         </html>
     </>

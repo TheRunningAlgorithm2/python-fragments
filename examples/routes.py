@@ -36,6 +36,7 @@ async def page() -> str:
     view_counter += 1
     return <>
         <Base title="Test" header="Test Header">
+            <p if={{ True }}>Hello</p>
             <p x-data="{ test: 'a' }">Views: {{ view_counter }}</p>
             <PostCard for={{ post in POSTS }} post={{ post }} />
         </Base>

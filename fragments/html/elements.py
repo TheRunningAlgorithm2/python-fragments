@@ -1,11 +1,11 @@
 import json
 from typing import Any
-from fragments.types import Children
+from fragments.types import Children, Stringable
 import html
 
 
-def sequence(children: Children) -> str:
-    return "".join(str(child) for child in children)
+def _sequence(items: list[str | Stringable]) -> str:
+    return "".join(str(item) for item in items)
 
 
 def el(
@@ -26,9 +26,7 @@ def el(
     if oneline:
         return f"""<{tag_contents_string} />"""
 
-    children_string = sequence(children)
-
-    return f"""<{tag_contents_string}>{children_string}</{name}>"""
+    return f"""<{tag_contents_string}>{children}</{name}>"""
 
 
 def comment(content: str) -> str:

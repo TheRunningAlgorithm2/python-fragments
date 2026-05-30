@@ -16,10 +16,10 @@ python benchmarks/transpilation/benchmark.py
 
 ```
 Transpiler benchmark (1000 iterations × 5 repeats)
-  Average per call: 134.9 µs
+  Average per call: 144.6 µs
 ```
 
-A simple file like this can be transpiled fully 7,400 times per second. At a typing speed of 400 characters per minute (fast, 6 characters per second, 1 character every 0.15 seconds) the file you're working on can be transpiled 1,200 times per character typed - this will never be the limiting factor in LSP or IDE performance.
+A simple file like this can be transpiled fully 6,900 times per second. At a typing speed of 400 characters per minute (fast, 6 characters per second, 1 character every 0.15 seconds) the file you're working on can be transpiled 1,150 times per character typed - this will never be the limiting factor in LSP or IDE performance.
 
 ## Calls
 
@@ -33,8 +33,8 @@ python benchmarks/calls/benchmark.py
 
 ```
 Call benchmark (10000 iterations × 5 repeats)
-  Fragments:            11.8 µs
-  String interpolation:  0.7 µs
+  Fragments:            6.7 µs
+  String interpolation: 0.8 µs
 ```
 
-Fragments adds overhead over raw string interpolation because it uses the HTML library (`el`, `sequence`) to build and join elements safely. For a typical web request this cost is negligible: at 10 µs per render, a single millisecond of request budget can fit ~100 fragment renders.
+Fragments adds overhead over raw string interpolation because it uses the HTML library (`el`) to build elements safely. For a typical web request this cost is negligible: at 6.7 µs per render, a single millisecond of request budget can fit ~149 fragment renders.

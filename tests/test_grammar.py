@@ -2,6 +2,7 @@ import pytest
 
 from fragments import grammar
 from fragments.ast_nodes import (
+    ASTChildrenSlot,
     ASTComponent,
     ASTComponentArgument,
     ASTComponentName,
@@ -365,6 +366,53 @@ def test_lowercase_not_parsed_as_component():
     source = Source.from_string("<><div>text</div></>")
     _, fragment = grammar.expect_fragment(source)
     assert isinstance(fragment.children[0], ASTHTMLElement)
+
+
+# ---------------------------------------------------------------------------
+# Children slot
+# ---------------------------------------------------------------------------
+
+
+def test_children_slot_parses():
+    source = Source.from_string("<><Children... /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTChildrenSlot(-1, -1)
+    ]))
+
+
+def test_children_slot_transpiles_to_children():
+    source = Source.from_string("<><Children... /></>")
+    _, fragment = grammar.expect_fragment(source)
+    fragment.transpile(0)
+    slot = fragment.children[0]
+    assert isinstance(slot, ASTChildrenSlot)
+    assert slot.transpiled_content == "children"
+
+
+def test_children_slot_multiple_in_one_fragment():
+    source = Source.from_string("<><Children... /><Children... /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert len(fragment.children) == 2
+    assert all(isinstance(child, ASTChildrenSlot) for child in fragment.children)
+
+
+def test_children_slot_not_confused_with_component():
+    source = Source.from_string("<><Children /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert isinstance(fragment.children[0], ASTComponent)
+
+
+def test_children_slot_inside_element():
+    source = Source.from_string("<><div><Children... /></div></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    element = fragment.children[0]
+    assert isinstance(element, ASTHTMLElement)
+    assert isinstance(element.children[0], ASTChildrenSlot)
 
 
 # ---------------------------------------------------------------------------

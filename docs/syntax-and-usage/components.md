@@ -7,13 +7,17 @@ Any Python function can be used as a component. Components are distinguished fro
 A component is a plain Python function that returns a fragment. Attributes passed on the tag become keyword arguments — declare them explicitly or accept them all with `**kwargs`:
 
 ```python
-def Card(children: list[str], classes: str = "") -> str:
+from fragments.types import Children
+
+def Card(children: Children, classes: str = "") -> str:
     return <>
         <div classes={{ classes }}>
-            {{ children }}
+            <Children... />
         </div>
     </>
 ```
+
+Use `<Children... />` inside the component body to mark where the caller's children should be rendered. It is always self-closing and takes no attributes.
 
 ## Using a component
 
