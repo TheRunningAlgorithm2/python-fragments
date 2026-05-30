@@ -6,6 +6,7 @@ from fragments.ast_nodes import (
     ASTComponentArgument,
     ASTComponentName,
     ASTControlNode,
+    ASTDoctype,
     ASTFragment,
     ASTHTMLAttribute,
     ASTHTMLComment,
@@ -117,6 +118,10 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
 
 def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
     """Any HTML / functional block that might appear as part of the fragment."""
+    if source.remaining().startswith("<!DOCTYPE html>"):
+        source, doctype = expect_doctype(source)
+        return source, doctype
+
     if source.remaining().startswith("<!--"):
         source, html_comment = expect_html_comment(source)
         return source, html_comment
@@ -190,6 +195,12 @@ def expect_component_name(source: Source) -> tuple[Source, ASTComponentName]:
     source_start = source.offset
     source, name = expect_regex(source, r"[A-Z][a-zA-Z0-9_]*", "component name")
     return source, ASTComponentName(source_start, source.offset, name)
+
+
+def expect_doctype(source: Source) -> tuple[Source, ASTDoctype]:
+    source_start = source.offset
+    source = expect_string(source, "<!DOCTYPE html>")
+    return source, ASTDoctype(source_start, source.offset)
 
 
 def expect_html_comment(source: Source) -> tuple[Source, ASTHTMLComment]:

@@ -6,6 +6,7 @@ from fragments.ast_nodes import (
     ASTComponentArgument,
     ASTComponentName,
     ASTControlNode,
+    ASTDoctype,
     ASTFragment,
     ASTHTMLAttribute,
     ASTHTMLComment,
@@ -21,6 +22,47 @@ def _transpiled(fragment: ASTFragment) -> ASTFragment:
     """Call transpile so all nodes have transpiled_* fields set for equality comparison."""
     fragment.transpile(0)
     return fragment
+
+
+# ---------------------------------------------------------------------------
+# Doctype
+# ---------------------------------------------------------------------------
+
+
+def test_doctype_standalone():
+    source = Source.from_string("<><!DOCTYPE html></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTDoctype(-1, -1)
+    ]))
+
+
+def test_doctype_transpiles_to_literal_string():
+    source = Source.from_string("<><!DOCTYPE html></>")
+    _, fragment = grammar.expect_fragment(source)
+    fragment.transpile(0)
+    doctype = fragment.children[0]
+    assert isinstance(doctype, ASTDoctype)
+    assert doctype.transpiled_content == '"<!DOCTYPE html>"'
+
+
+def test_doctype_followed_by_element():
+    source = Source.from_string("<><!DOCTYPE html><html></html></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
+        ASTDoctype(-1, -1),
+        ASTHTMLElement(-1, -1, "html", {}, [], False),
+    ]))
+
+
+def test_doctype_not_confused_with_comment():
+    source = Source.from_string("<><!DOCTYPE html><!-- a note --></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert isinstance(fragment.children[0], ASTDoctype)
+    assert isinstance(fragment.children[1], ASTHTMLComment)
 
 
 # ---------------------------------------------------------------------------

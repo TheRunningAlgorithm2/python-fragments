@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Sequence
 
-type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode
+type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode | ASTDoctype
 
 
 @dataclass(slots=True)
@@ -389,6 +389,27 @@ class ASTComponentArgument:
         if self.interpolation.transpiled_start <= offset <= self.interpolation.transpiled_end:
             return self.interpolation.unmap_offset(offset)
 
+        return None
+
+
+@dataclass(slots=True)
+class ASTDoctype:
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    transpiled_content: str = field(init=False)
+    transpiled_start: int = field(init=False)
+    transpiled_end: int = field(init=False)
+
+    def transpile(self, transpiled_start: int) -> None:
+        self.transpiled_start = transpiled_start
+        self.transpiled_content = '"<!DOCTYPE html>"'
+        self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
+
+    def map_offset(self, offset: int) -> None:
+        return None
+
+    def unmap_offset(self, offset: int) -> None:
         return None
 
 
