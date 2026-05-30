@@ -17,6 +17,7 @@
       "patterns": [
         { "include": "#comment" },
         { "include": "#closing-tag" },
+        { "include": "#children-slot" },
         { "include": "#open-tag" },
         { "include": "#interpolation" }
       ]
@@ -35,6 +36,10 @@
         "2": { "name": "entity.name.tag.fragment" },
         "3": { "name": "punctuation.definition.tag.fragment" }
       }
+    },
+    "children-slot": {
+      "match": "<Children\\.\\.\\. />",
+      "name": "variable.language.children.fragment"
     },
     "open-tag": {
       "begin": "(<)([a-zA-Z][a-zA-Z0-9_-]*)",
