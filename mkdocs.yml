@@ -44,13 +44,13 @@ extra:
       link: https://www.therunningalgorithm.com
       name: TheRunningAlgorithm
     - icon: fontawesome/brands/linkedin
-      link: https://www.linkedin.com/company/therunningalgorithm
+      link: https://www.linkedin.com/company/the-running-algorithm
       name: LinkedIn
     - icon: fontawesome/brands/github
       link: https://github.com/TheRunningAlgorithm2
       name: GitHub
     - icon: fontawesome/solid/envelope
-      link: mailto:hello@therunningalgorithm.com
+      link: mailto:matt@therunningalgorithm.info
       name: Contact
 
 nav:

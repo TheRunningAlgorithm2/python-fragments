@@ -23,6 +23,24 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -v
 
+  deploy-docs:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install mkdocs mkdocs-material pymdown-extensions
+
+      - name: Deploy docs
+        run: mkdocs gh-deploy --force
+
   publish:
     needs: test
     runs-on: ubuntu-latest

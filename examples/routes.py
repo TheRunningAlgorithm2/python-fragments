@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from layouts import Base
 from dataclasses import dataclass
 from datetime import datetime
+from fragments.types import Children
 
 router = APIRouter()
 
@@ -20,10 +21,9 @@ POSTS: list[Post] = [
     Post("The Running Algorithm", datetime(2026, 5, 12)),
 ]
 
-def PostCard(children: list[str], post: Post) -> str:
+def PostCard(children: Children, post: Post) -> str:
     return <>
         <div>
-            <!-- Hello -->
             <h2>{{ post.title }}</h2>
             <p>{{ post.date.strftime("%d-%m-%y") }}</p>
         </div>
