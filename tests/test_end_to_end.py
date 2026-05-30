@@ -50,6 +50,18 @@ def test_multiple_interpolations():
     assert render("<><p>{{ a }} and {{ b }}</p></>", a="foo", b="bar") == "<p>foo and bar</p>"
 
 
+def test_text_space_before_element():
+    assert render("<>Icon: <i></i></>") == "Icon: <i></i>"
+
+
+def test_text_space_after_element():
+    assert render("<><i></i> text</>") == "<i></i> text"
+
+
+def test_text_space_around_element():
+    assert render("<>before <i>em</i> after</>") == "before <i>em</i> after"
+
+
 # ---------------------------------------------------------------------------
 # Control flow — if
 # ---------------------------------------------------------------------------

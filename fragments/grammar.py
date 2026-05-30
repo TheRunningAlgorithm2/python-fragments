@@ -103,7 +103,9 @@ def expect_fragment(source: Source) -> tuple[Source, ASTFragment]:
 
     children: list[ASTHTMLChild] = []
     while not source.remaining().startswith("</>"):
-        source, _ = source.eat_whitespace()
+        source_after_whitespace, _ = source.eat_whitespace()
+        if source_after_whitespace.remaining().startswith("<"):
+            source = source_after_whitespace
         if source.remaining().startswith("</>"):
             break
         source, child = expect_child(source)
@@ -291,7 +293,7 @@ def expect_children(source: Source) -> tuple[Source, list[ASTHTMLChild]]:
         source, child = expect_child(source)
         children.append(child)
         source_after_whitespace, _ = source.eat_whitespace()
-        if not source_after_whitespace.remaining().startswith("{{"):
+        if source_after_whitespace.remaining().startswith("<"):
             source = source_after_whitespace
     return source, children
 
