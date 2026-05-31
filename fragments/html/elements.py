@@ -9,7 +9,7 @@ def comment(content: str) -> str:
 
 def attribute_to_string(name: str, value: Any) -> str:
     if value is None:
-        return name
+        return ""
 
     if isinstance(value, tuple):
         value = list(value)

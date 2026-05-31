@@ -464,7 +464,7 @@ class ASTHTMLAttribute:
             return
 
         if self.interpolation is None:
-            self.transpiled_content = f'"{self.name}"'
+            self.transpiled_content = f"{self.name}"
             self.transpiled_end = self.transpiled_start + len(self.transpiled_content)
             return
 

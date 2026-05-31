@@ -34,7 +34,7 @@ def test_self_closing_element():
 
 
 def test_empty_fragment():
-    assert render('<></>') == ""
+    assert render("<></>") == ""
 
 
 # ---------------------------------------------------------------------------
@@ -131,7 +131,7 @@ def test_component_no_children():
     def Badge(children: str, label: str) -> str:
         return f"<span>{label}</span>"
 
-    result = render("<><Badge label=\"hi\" /></>", Badge=Badge)
+    result = render('<><Badge label="hi" /></>', Badge=Badge)
     assert result == "<span>hi</span>"
 
 
@@ -181,3 +181,41 @@ def test_interpolated_style_dict():
 def test_interpolated_style_string():
     result = render("<><div style={{ styles }}>text</div></>", styles="color: red")
     assert result == '<div style="color: red">text</div>'
+
+
+# ---------------------------------------------------------------------------
+# Boolean attributes
+# ---------------------------------------------------------------------------
+
+
+def test_bare_boolean_attribute():
+    assert render("<><input disabled /></>") == "<input disabled />"
+
+
+def test_bare_boolean_attribute_with_regular_attribute():
+    result = render('<><input type="checkbox" checked /></>')
+    assert result == '<input type="checkbox" checked />'
+
+
+def test_multiple_bare_boolean_attributes():
+    assert render("<><input disabled required /></>") == "<input disabled required />"
+
+
+def test_boolean_attribute_none_value():
+    assert render("<><input disabled={{ None }} /></>") == "<input  />"
+
+
+def test_boolean_attribute_true_value():
+    assert render("<><input disabled={{ True }} /></>") == '<input disabled="true" />'
+
+
+def test_boolean_attribute_false_value():
+    assert render("<><input disabled={{ False }} /></>") == '<input disabled="false" />'
+
+
+def test_boolean_attribute_true_or_none_value():
+    assert render("<><input disabled={{ True or None }} /></>") == '<input disabled="true" />'
+
+
+def test_boolean_attribute_false_or_none_value():
+    assert render("<><input disabled={{ False or None }} /></>") == "<input  />"
