@@ -1,6 +1,6 @@
 # Fragments
 
-A fragment is a block of HTML written inline in Python, delimited by `<>` and `</>`. At runtime, a fragment is transpiled into a function call that returns a plain Python string — so you can use one anywhere you would use a string.
+A fragment is a block of HTML written inline in Python, delimited by `<>` and `</>`. At runtime, a fragment is transpiled into a function call that returns a plain Python string - so you can use one anywhere you would use a string.
 
 ```python
 def my_view():
@@ -9,6 +9,8 @@ def my_view():
         <p>Welcome.</p>
     </>
 ```
+
+!!! note "Fragments *must* be wrapped in `<>` and `</>`, `return <MyComponent />` is not valid syntax"
 
 Because a fragment evaluates to a string, it can appear as a return value, in an assignment, passed as an argument, or in any other string context:
 
