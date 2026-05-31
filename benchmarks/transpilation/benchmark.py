@@ -7,7 +7,7 @@ from fragments.transpiler import transpile
 
 SOURCE = (Path(__file__).parent / "sample.py").read_text()
 
-ITERATIONS = 1000
+ITERATIONS = 5000
 REPEATS = 5
 
 if __name__ == "__main__":

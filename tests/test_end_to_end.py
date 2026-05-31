@@ -156,3 +156,28 @@ def test_component_children_pre_joined():
         Wrapper=Wrapper,
     )
     assert result == "<div><p>one</p><p>two</p></div>"
+
+
+# ---------------------------------------------------------------------------
+# Special attributes — className and style
+# ---------------------------------------------------------------------------
+
+
+def test_interpolated_classname_list():
+    result = render("<><div className={{ classes }}>text</div></>", classes=["foo", "bar"])
+    assert result == '<div class="foo bar">text</div>'
+
+
+def test_interpolated_classname_string():
+    result = render("<><div className={{ classes }}>text</div></>", classes="foo bar")
+    assert result == '<div class="foo bar">text</div>'
+
+
+def test_interpolated_style_dict():
+    result = render("<><div style={{ styles }}>text</div></>", styles={"color": "red", "font-size": "12px"})
+    assert result == '<div style="color: red;font-size: 12px">text</div>'
+
+
+def test_interpolated_style_string():
+    result = render("<><div style={{ styles }}>text</div></>", styles="color: red")
+    assert result == '<div style="color: red">text</div>'

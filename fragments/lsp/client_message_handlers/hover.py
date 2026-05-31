@@ -1,3 +1,4 @@
+import sys
 from lsprotocol import types
 from lsprotocol.types import REQUESTS, NOTIFICATIONS
 from typing import cast

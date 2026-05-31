@@ -25,7 +25,7 @@ async def index() -> str:
 **After transpilation — what the interpreter sees:**
 
 ```python
-from fragments.html.elements import el, _sequence, comment
+from fragments.html.elements import attribute_to_string, comment
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
@@ -33,7 +33,7 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return el("h1","Hello, world!",oneline=False,attributes={})+el("p","Welcome to Fragments.",oneline=False,attributes={})
+    return f"<h1>"+"Hello, world!"+"</h1>"+f"<p>"+"Welcome to Fragments."+"</p>"
 ```
 
 **Endpoint return value** — a plain Python string:
@@ -44,12 +44,12 @@ async def index() -> str:
 
 The transpiler does two things:
 
-1. Prepends `from fragments.html.elements import el, _sequence, comment` at the top of the file.
+1. Prepends `from fragments.html.elements import attribute_to_string, comment` at the top of the file.
 2. Replaces every `<> ... </>` block with its children joined by `+`.
 
 ## Dynamic content — `for` and `if`
 
-The `for` attribute on an element compiles to a **list comprehension**, and `_sequence(...)` wraps it so the result is still a flat string.
+The `for` attribute on an element compiles to a **generator expression** wrapped in `''.join(str(...) for ...)` so the result is a flat string.
 
 **Before:**
 
@@ -72,7 +72,7 @@ async def post_list() -> str:
 @app.get("/posts", response_class=HTMLResponse)
 async def post_list() -> str:
     posts = get_posts()
-    return el("h1","Posts",oneline=False,attributes={})+_sequence([el("article",el("h2",post.title,oneline=False,attributes={})+el("p",post.summary,oneline=False,attributes={}),oneline=False,attributes={}) for post in posts])
+    return f"<h1>"+"Posts"+"</h1>"+''.join(str(f"<article>"+f"<h2>"+post.title+"</h2>"+f"<p>"+post.summary+"</p>"+"</article>") for post in posts)
 ```
 
 **Result** (with two posts in the list):
@@ -81,9 +81,9 @@ async def post_list() -> str:
 '<h1>Posts</h1><article><h2>First Post</h2><p>A short summary.</p></article><article><h2>Second Post</h2><p>Another summary.</p></article>'
 ```
 
-The `for={{ post in posts }}` attribute is stripped from the element and becomes the `for post in posts` clause of a list comprehension. `_sequence([... for post in posts])` then joins the resulting list of rendered articles.
+The `for={{ post in posts }}` attribute is stripped from the element and becomes the `for post in posts` clause of a generator expression. `''.join(str(...) for post in posts)` then joins the resulting rendered articles into a flat string.
 
-Similarly, `if={{ condition }}` compiles to a Python ternary: `(el(...) if condition else '')`.
+Similarly, `if={{ condition }}` compiles to a Python ternary: `(element if condition else '')`.
 
 ## Components — uppercase tags
 
@@ -103,7 +103,7 @@ return <>
 **After:**
 
 ```python
-return Layout(el("h1","Posts",oneline=False,attributes={})+_sequence([PostCard("",post=post) for post in posts]),title="My Blog")
+return Layout(f"<h1>"+"Posts"+"</h1>"+''.join(str(PostCard("",post=post)) for post in posts),title="My Blog")
 ```
 
 `Layout` and `PostCard` are ordinary Python functions — the transpiler calls them with children as the first positional argument (a pre-joined string) and tag attributes as keyword arguments. How those kwargs are received is up to the component:

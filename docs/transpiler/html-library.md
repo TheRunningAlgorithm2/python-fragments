@@ -1,18 +1,19 @@
 # HTML Library
 
-Fragments are translated into calls to runtime functions from `fragments.html.elements`. This is what gives Fragments native HTML awareness.
+The transpiler generates f-strings directly for HTML elements, and imports two runtime helpers from `fragments.html.elements` for the cases that need them.
 
-**`el(name, children, oneline, attributes)`** builds a single HTML element.
+**`attribute_to_string(name, value)`** renders a single HTML attribute. It is called inside f-string interpolations in the transpiled code whenever an attribute has a dynamic value.
 
 | Argument | Type | Purpose |
 |---|---|---|
-| `name` | `str` | The tag name (`"h1"`, `"div"`, …) |
-| `children` | `Children` | Rendered inner content as a string |
-| `oneline` | `bool` | `True` for self-closing tags (`/>`) |
-| `attributes` | `dict[str, Any]` | HTML attributes as a dict |
+| `name` | `str` | The attribute name |
+| `value` | `Any` | The attribute value |
+
+Special cases handled automatically:
+
+- `className` — converted to `class="..."`. Accepts a string or a list of strings (joined with spaces).
+- `style` — converted to `style="..."`. Accepts a string or a dict of CSS properties.
+- `None` — renders as a boolean attribute with no value (e.g. `checked`).
+- `dict` or `list` — JSON-encoded and HTML-escaped.
 
 **`comment(content)`** renders an HTML comment — it is what `<!-- ... -->` compiles to.
-
-For example, `el("h1","Hello, world!",oneline=False,attributes={})` produces the string `<h1>Hello, world!</h1>`.
-
-The `_sequence(items)` function is used internally by the transpiler to join list comprehensions (from `for` attributes) into strings. It is not part of the public API and should not be called directly.

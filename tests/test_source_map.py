@@ -1,8 +1,6 @@
 from fragments.lsp.file_state import FileState
 from lsprotocol import types
-
-IMPORT_PREFIX = "from fragments.html.elements import el, _sequence, comment\n"
-IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)
+from fragments.ast_nodes import IMPORT_PREFIX_LEN
 
 
 def make_state(source_str: str) -> FileState:
@@ -60,18 +58,21 @@ def test_no_fragments_position_mapping():
 
 
 def test_interpolation_is_mappable():
-    source = "<>\n    <p>{{ title }}</p>\n</>"
+    source = "<>\n    <p>{{ title in titles }}</p>\n</>"
     state = make_state(source)
     interp_start = source.index("{{")
     # expression 'title' starts after '{{ ' (2 + 1 space)
     expr_start = interp_start + 3
-    expr = "title"
+    expr = "title in titles"
 
     # Characters of the expression are mappable (first char excluded by exclusive-start).
     for k in range(1, len(expr)):
         t = state.ast_module.map_offset(expr_start + k)
         assert t is not None, f"offset {expr_start + k} should be mappable"
+        assert state.ast_module.map_offset(expr_start + k - 1) == t - 1
         assert state.transpiled[t] == expr[k]
+
+    # Characters in the white space after an expression are not mappable
 
     # Round-trip
     for k in range(1, len(expr)):
