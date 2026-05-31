@@ -960,8 +960,8 @@
 
 
 <h1 id="html-library">HTML Library</h1>
-<p>Fragments are translated into calls to two runtime functions from <code>fragments.html.elements</code>. This is what gives Fragments native HTML awareness.</p>
-<p><strong><code>el(name, children, oneline, attributes)</code></strong> builds a single HTML element.</p>
+<p>The transpiler generates f-strings directly for HTML elements, and imports two runtime helpers from <code>fragments.html.elements</code> for the cases that need them.</p>
+<p><strong><code>attribute_to_string(name, value)</code></strong> renders a single HTML attribute. It is called inside f-string interpolations in the transpiled code whenever an attribute has a dynamic value.</p>
 <table>
 <thead>
 <tr>
@@ -974,28 +974,23 @@
 <tr>
 <td><code>name</code></td>
 <td><code>str</code></td>
-<td>The tag name (<code>"h1"</code>, <code>"div"</code>, …)</td>
+<td>The attribute name</td>
 </tr>
 <tr>
-<td><code>children</code></td>
-<td><code>list[str]</code></td>
-<td>Rendered inner content</td>
-</tr>
-<tr>
-<td><code>oneline</code></td>
-<td><code>bool</code></td>
-<td><code>True</code> for self-closing tags (<code>/&gt;</code>)</td>
-</tr>
-<tr>
-<td><code>attributes</code></td>
-<td><code>dict[str, Any]</code></td>
-<td>HTML attributes as a dict</td>
+<td><code>value</code></td>
+<td><code>Any</code></td>
+<td>The attribute value</td>
 </tr>
 </tbody>
 </table>
-<p><strong><code>sequence(children)</code></strong> concatenates a list of rendered strings into one — it is what <code>&lt;&gt; ... &lt;/&gt;</code> compiles to at the top level.</p>
+<p>Special cases handled automatically:</p>
+<ul>
+<li><code>className</code> — converted to <code>class="..."</code>. Accepts a string or a list of strings (joined with spaces).</li>
+<li><code>style</code> — converted to <code>style="..."</code>. Accepts a string or a dict of CSS properties.</li>
+<li><code>None</code> — renders as a boolean attribute with no value (e.g. <code>checked</code>).</li>
+<li><code>dict</code> or <code>list</code> — JSON-encoded and HTML-escaped.</li>
+</ul>
 <p><strong><code>comment(content)</code></strong> renders an HTML comment — it is what <code>&lt;!-- ... --&gt;</code> compiles to.</p>
-<p>For example, <code>el("h1",["Hello, world!"],oneline=False,attributes={})</code> produces the string <code>&lt;h1&gt;Hello, world!&lt;/h1&gt;</code>, and <code>sequence([...])</code> joins a list of elements into the final HTML string.</p>
 
 
 

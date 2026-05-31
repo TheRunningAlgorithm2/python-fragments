@@ -960,13 +960,16 @@
 
 
 <h1 id="fragments">Fragments</h1>
-<p>A fragment is a block of HTML written inline in Python, delimited by <code>&lt;&gt;</code> and <code>&lt;/&gt;</code>. At runtime, a fragment is transpiled into a function call that returns a plain Python string — so you can use one anywhere you would use a string.</p>
+<p>A fragment is a block of HTML written inline in Python, delimited by <code>&lt;&gt;</code> and <code>&lt;/&gt;</code>. At runtime, a fragment is transpiled into a function call that returns a plain Python string - so you can use one anywhere you would use a string.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_view</span><span class="p">():</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">return</span> <span class="o">&lt;&gt;</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">Hello</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">Welcome</span><span class="o">.&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">&lt;/&gt;</span>
 </span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Fragments <em>must</em> be wrapped in <code>&lt;&gt;</code> and <code>&lt;/&gt;</code>, <code>return &lt;MyComponent /&gt;</code> is not valid syntax</p>
+</div>
 <p>Because a fragment evaluates to a string, it can appear as a return value, in an assignment, passed as an argument, or in any other string context:</p>
 <p><code>&lt;&gt;</code> and <code>&lt;/&gt;</code> inside Python string literals or line comments are not treated as fragment delimiters, so code like <code>assert result == "&lt;p&gt;hello&lt;/p&gt;"</code> or <code># renders a &lt;&gt; fragment &lt;/&gt;</code> is safe.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># As a return value</span>
