@@ -16,16 +16,17 @@ python benchmarks/transpilation/benchmark.py
 
 ```
 Transpiler benchmark (5000 iterations × 5 repeats)
-  Average per call: 151.5 µs
+  Fragments: 138.7 µs
+  Jinja2:    1110.9 µs
 ```
 
-A simple file like this can be transpiled fully 6,600 times per second. At a typing speed of 400 characters per minute (fast, 6 characters per second, 1 character every 0.15 seconds) the file you're working on can be transpiled 990 times per character typed - this will never be the limiting factor in LSP or IDE performance.
+Fragments transpiles a file like this in 138.7 µs — about 8× faster than Jinja2 compiles an equivalent template. At 7,200 transpilations per second, a file can be transpiled 1,200 times per character typed at a fast typing speed — this will never be the limiting factor in LSP or IDE performance.
 
 ## Calls
 
 Measures how long a transpiled fragment function takes to execute at runtime compared to an equivalent plain string interpolation. This is the cost paid on every request.
 
-**Source:** `benchmarks/calls/sample.py`: two functions that each render a list of three posts with a heading, byline, and summary: one using fragments, one using `str.format()`.
+**Source:** `benchmarks/calls/sample.py`: three functions that each render a list of three posts with a heading, byline, and summary: one using fragments, one using Jinja2, and one using `str.format()`.
 
 ```bash
 python benchmarks/calls/benchmark.py
@@ -33,8 +34,9 @@ python benchmarks/calls/benchmark.py
 
 ```
 Call benchmark (10000 iterations × 5 repeats)
-  Fragments:            2.2 µs
-  String interpolation: 0.9 µs
+  Fragments:            2.1 µs
+  Jinja2:               5.5 µs
+  String interpolation: 0.7 µs
 ```
 
-Fragments adds a small overhead over raw string interpolation. For a typical web request this cost is negligible: at 2.2 µs per render, a single millisecond of request budget can fit ~454 fragment renders.
+Fragments adds a small overhead over raw string interpolation and is significantly faster than Jinja2. For a typical web request this cost is negligible: at 2.1 µs per render, a single millisecond of request budget can fit ~476 fragment renders.

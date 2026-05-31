@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import jinja2
+
 
 @dataclass
 class Post:
@@ -22,6 +24,21 @@ def Articles() -> str:
             <p classes="summary">{{ post.summary }}</p>
         </article>
     </>
+
+
+_jinja_environment = jinja2.Environment()
+_jinja_template = _jinja_environment.from_string(
+    "{% for post in posts %}"
+    '<article><h1>{{ post.title }}</h1>'
+    '<p classes="byline">By {{ post.author }}</p>'
+    '<p classes="summary">{{ post.summary }}</p>'
+    "</article>"
+    "{% endfor %}"
+)
+
+
+def ArticlesJinja() -> str:
+    return _jinja_template.render(posts=POSTS)
 
 
 def ArticlesStringOnly() -> str:
