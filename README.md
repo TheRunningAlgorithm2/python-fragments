@@ -2,10 +2,12 @@
   <img src="logo.svg" alt="Python Fragments" width="300" />
 </p>
 
-[![Tests](https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml/badge.svg)](https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml)
-[![PyPI version](https://img.shields.io/pypi/v/python-fragments)](https://pypi.org/project/python-fragments/)
-[![Python versions](https://img.shields.io/pypi/pyversions/python-fragments)](https://pypi.org/project/python-fragments/)
-[![License](https://img.shields.io/github/license/TheRunningAlgorithm2/python-fragments)](https://github.com/TheRunningAlgorithm2/python-fragments/blob/main/LICENSE)
+<p align="center">
+  <a href="https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml"><img src="https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
+  <a href="https://pypi.org/project/python-fragments/"><img src="https://img.shields.io/pypi/v/python-fragments" alt="PyPI version" /></a>
+  <a href="https://pypi.org/project/python-fragments/"><img src="https://img.shields.io/pypi/pyversions/python-fragments" alt="Python versions" /></a>
+  <a href="https://github.com/TheRunningAlgorithm2/python-fragments/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TheRunningAlgorithm2/python-fragments" alt="License" /></a>
+</p>
 
 > **This package is in early development and not yet stable. The API may change without notice between releases.**
 
