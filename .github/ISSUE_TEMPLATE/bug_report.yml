@@ -1,0 +1,71 @@
+name: Bug report
+description: Report something that isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps to reproduce the behaviour, including a minimal code example.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "e.g. 3.12.3"
+    validations:
+      required: true
+
+  - type: input
+    id: fragments-version
+    attributes:
+      label: python-fragments version
+      placeholder: "e.g. 0.33"
+    validations:
+      required: true
+
+  - type: input
+    id: runtime-context
+    attributes:
+      label: Other runtime context
+      description: Anything else relevant to your environment (framework, deployment setup, etc.)
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Screenshots, links to related issues, or anything else that might help.
+    validations:
+      required: false

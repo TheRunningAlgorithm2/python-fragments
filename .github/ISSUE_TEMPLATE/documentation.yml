@@ -1,0 +1,20 @@
+name: Documentation
+description: Report something unclear, incorrect, or missing in the docs
+labels: ["documentation"]
+body:
+  - type: input
+    id: area
+    attributes:
+      label: Which area of the docs does this relate to?
+      description: A page, section, or topic — or describe something that isn't covered at all.
+      placeholder: "e.g. Getting Started guide, LSP setup, or no docs on X"
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What's the issue?
+      description: Describe what's unclear, incorrect, or missing, and what you'd like to see instead.
+    validations:
+      required: true

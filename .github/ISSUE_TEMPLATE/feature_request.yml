@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest something you'd like to see in Python Fragments
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the use case or problem. The more clearly you can explain the need, the better we can evaluate it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: If you have a specific idea in mind, you can describe it here. This is optional — a clear problem statement is more valuable.
+    validations:
+      required: false
