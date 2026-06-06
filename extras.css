@@ -1,6 +1,6 @@
 /* Custom styles */
 
-@import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@700&family=Space+Mono:wght@700&display=swap');
 
 .md-typeset h1,
 .md-typeset h2,
@@ -23,6 +23,11 @@
 
 [data-md-color-scheme="slate"] .md-header {
   background-color: var(--md-footer-bg-color);
+}
+
+.md-header__title {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
 }
 
 .md-search__form {
