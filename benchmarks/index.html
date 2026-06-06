@@ -88,9 +88,7 @@
               </button>
             
             
-  Python Fragments is now available on PyPI 🎉
-  <a href="https://pypi.org/project/python-fragments/"><code>pip install python-fragments</code></a>
-  ⚠️ <b>Early development</b> APIs may change between releases
+  ⚠️ <b>Early development</b> - APIs may change between releases
 
           </div>
           
@@ -1053,10 +1051,10 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>benchmarks/transpilation/benchmark.py
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Transpiler benchmark (5000 iterations × 5 repeats)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  Fragments: 138.7 µs
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Jinja2:    1110.9 µs
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  Fragments: 144.7 µs
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Jinja2:    1039.7 µs
 </span></code></pre></div>
-<p>Fragments transpiles a file like this in 138.7 µs — about 8× faster than Jinja2 compiles an equivalent template. At 7,200 transpilations per second, a file can be transpiled 1,200 times per character typed at a fast typing speed — this will never be the limiting factor in LSP or IDE performance.</p>
+<p>Fragments transpiles a file like this in 144.7 µs — about 7× faster than Jinja2 compiles an equivalent template. At 6,900 transpilations per second, a file can be transpiled 1,200 times per character typed at a fast typing speed — this will never be the limiting factor in LSP or IDE performance.</p>
 <h2 id="calls">Calls</h2>
 <p>Measures how long a transpiled fragment function takes to execute at runtime compared to an equivalent plain string interpolation. This is the cost paid on every request.</p>
 <p><strong>Source:</strong> <code>benchmarks/calls/sample.py</code>: three functions that each render a list of three posts with a heading, byline, and summary: one using fragments, one using Jinja2, and one using <code>str.format()</code>.</p>
@@ -1064,8 +1062,8 @@
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Call benchmark (10000 iterations × 5 repeats)
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  Fragments:            2.1 µs
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  Jinja2:               5.5 µs
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  String interpolation: 0.7 µs
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  Jinja2:               5.9 µs
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  String interpolation: 0.9 µs
 </span></code></pre></div>
 <p>Fragments adds a small overhead over raw string interpolation and is significantly faster than Jinja2. For a typical web request this cost is negligible: at 2.1 µs per render, a single millisecond of request budget can fit ~476 fragment renders.</p>
 

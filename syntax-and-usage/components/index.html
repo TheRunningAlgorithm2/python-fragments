@@ -90,9 +90,7 @@
               </button>
             
             
-  Python Fragments is now available on PyPI 🎉
-  <a href="https://pypi.org/project/python-fragments/"><code>pip install python-fragments</code></a>
-  ⚠️ <b>Early development</b> APIs may change between releases
+  ⚠️ <b>Early development</b> - APIs may change between releases
 
           </div>
           
@@ -1100,6 +1098,12 @@
 <h2 id="self-closing-components">Self-closing components</h2>
 <p>Components with no children can use self-closing syntax:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="o">&lt;</span><span class="n">Avatar</span> <span class="n">src</span><span class="o">=</span><span class="p">{{</span> <span class="n">user</span><span class="o">.</span><span class="n">avatar_url</span> <span class="p">}}</span> <span class="o">/&gt;</span>
+</span></code></pre></div>
+<p>Self-closing components receive no <code>children</code> argument, so there is no need to declare a <code>children</code> parameter:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">Avatar</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="k">return</span> <span class="o">&lt;&gt;</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>        <span class="o">&lt;</span><span class="n">img</span> <span class="n">src</span><span class="o">=</span><span class="p">{{</span> <span class="n">src</span> <span class="p">}}</span> <span class="n">alt</span><span class="o">=</span><span class="s2">&quot;avatar&quot;</span> <span class="o">/&gt;</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="o">&lt;/&gt;</span>
 </span></code></pre></div>
 
 

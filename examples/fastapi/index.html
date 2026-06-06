@@ -90,9 +90,7 @@
               </button>
             
             
-  Python Fragments is now available on PyPI 🎉
-  <a href="https://pypi.org/project/python-fragments/"><code>pip install python-fragments</code></a>
-  ⚠️ <b>Early development</b> APIs may change between releases
+  ⚠️ <b>Early development</b> - APIs may change between releases
 
           </div>
           
@@ -1162,7 +1160,7 @@
 </span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="o">&lt;/&gt;</span>
 </span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
 </span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">PostCard</span><span class="p">(</span><span class="n">children</span><span class="p">:</span> <span class="n">Children</span><span class="p">,</span> <span class="n">post</span><span class="p">:</span> <span class="n">Post</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">PostCard</span><span class="p">(</span><span class="n">post</span><span class="p">:</span> <span class="n">Post</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>    <span class="k">return</span> <span class="o">&lt;&gt;</span>
 </span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="o">&lt;</span><span class="n">article</span> <span class="n">classes</span><span class="o">=</span><span class="s2">&quot;post-card&quot;</span><span class="o">&gt;</span>
 </span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>            <span class="o">&lt;</span><span class="n">h2</span><span class="o">&gt;</span>
@@ -1173,7 +1171,7 @@
 </span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>        <span class="o">&lt;/</span><span class="n">article</span><span class="o">&gt;</span>
 </span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>    <span class="o">&lt;/&gt;</span>
 </span></code></pre></div>
-<p><code>Layout</code> receives <code>title</code> as a keyword argument and <code>children</code> from whatever is nested inside <code>&lt;Layout&gt;...&lt;/Layout&gt;</code>. <code>PostCard</code> declares <code>post</code> explicitly as a typed parameter — it ignores <code>children</code> since it's always self-closing.</p>
+<p><code>Layout</code> receives <code>children</code> from whatever is nested inside <code>&lt;Layout&gt;...&lt;/Layout&gt;</code> and <code>title</code> as a keyword argument. <code>PostCard</code> is always used self-closing, so it declares only <code>post</code> — no <code>children</code> parameter needed.</p>
 <h2 id="routespy">routes.py</h2>
 <p>Two routes: a post listing and a detail view.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">APIRouter</span><span class="p">,</span> <span class="n">HTTPException</span>
