@@ -21,6 +21,10 @@
   --md-typeset-a-color: #7bc24c !important;
 }
 
+[data-md-color-scheme="slate"] .md-header {
+  background-color: var(--md-default-bg-color);
+}
+
 .md-search__form {
   border-radius: 6px;
 }
