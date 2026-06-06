@@ -75,3 +75,4 @@ nav:
   - Examples:
     - FastAPI: examples/fastapi.md
   - Benchmarks: benchmarks/index.md
+  - Roadmap: roadmap.md
