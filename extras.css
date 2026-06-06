@@ -2,7 +2,12 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@700&family=Space+Mono:wght@700&display=swap');
 
-.md-typeset h1,
+.md-typeset h1 {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: #ffffff;
+}
+
 .md-typeset h2,
 .md-typeset h3,
 .md-typeset h4,
