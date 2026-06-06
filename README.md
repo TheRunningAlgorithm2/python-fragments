@@ -1,4 +1,6 @@
-# Python Fragments
+<p align="center">
+  <img src="logo.svg" alt="Python Fragments" width="300" />
+</p>
 
 > **This package is in early development and not yet stable. The API may change without notice between releases.**
 

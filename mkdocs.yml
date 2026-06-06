@@ -1,4 +1,5 @@
-site_name: Python Fragments
+site_name: Fragments
+site_url: https://python-fragments.io
 repo_url: https://github.com/TheRunningAlgorithm2/python-fragments
 repo_name: Python Fragments
 theme:
@@ -13,7 +14,6 @@ theme:
     - search.highlight
     - search.share
     - content.code.copy
-    - announce.dismiss
 
 plugins:
   - search:
