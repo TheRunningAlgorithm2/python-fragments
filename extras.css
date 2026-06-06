@@ -22,7 +22,7 @@
 }
 
 [data-md-color-scheme="slate"] .md-header {
-  background-color: var(--md-default-bg-color);
+  background-color: var(--md-footer-bg-color);
 }
 
 .md-search__form {
