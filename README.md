@@ -2,6 +2,11 @@
   <img src="logo.svg" alt="Python Fragments" width="300" />
 </p>
 
+[![Tests](https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml/badge.svg)](https://github.com/TheRunningAlgorithm2/python-fragments/actions/workflows/test.yml)
+[![PyPI version](https://img.shields.io/pypi/v/python-fragments)](https://pypi.org/project/python-fragments/)
+[![Python versions](https://img.shields.io/pypi/pyversions/python-fragments)](https://pypi.org/project/python-fragments/)
+[![License](https://img.shields.io/github/license/TheRunningAlgorithm2/python-fragments)](https://github.com/TheRunningAlgorithm2/python-fragments/blob/main/LICENSE)
+
 > **This package is in early development and not yet stable. The API may change without notice between releases.**
 
 Modern HTML template rendering in Python — no build step, no template files, and native HTML awareness out of the box.
