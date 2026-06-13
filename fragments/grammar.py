@@ -180,7 +180,7 @@ def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlN
     if source.starts_with("/>"):
         source = expect_string(source, "/>")
         return source, ASTControlNode[ASTComponent].wrap_child(
-            ASTComponent(source_start, source.offset, name, arguments, []),
+            ASTComponent(source_start, source.offset, name, arguments, [], self_closing=True),
             if_argument.interpolation if if_argument is not None else None,
             for_argument.interpolation if for_argument is not None else None,
         )
@@ -196,7 +196,7 @@ def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlN
         raise ParsingError(f"Element closed ({closing_name.name}) is not the same as currently opened element ({name.name})", source.offset)
 
     return source, ASTControlNode[ASTComponent].wrap_child(
-        ASTComponent(source_start=source_start, source_end=source.offset, name=name, arguments=arguments, children=children),
+        ASTComponent(source_start=source_start, source_end=source.offset, name=name, arguments=arguments, children=children, self_closing=False),
         if_argument.interpolation if if_argument is not None else None,
         for_argument.interpolation if for_argument is not None else None,
     )

@@ -253,6 +253,7 @@ class ASTComponent:
     name: "ASTComponentName"
     arguments: dict[str, "ASTComponentArgument"]
     children: Sequence["ASTHTMLChild"]
+    self_closing: bool
 
     transpiled_content: str = field(init=False)
     transpiled_start: int = field(init=False)
@@ -263,13 +264,14 @@ class ASTComponent:
     def transpile(self, transpiled_start: int) -> None:
         self.transpiled_start = transpiled_start
         self.name.transpile(self.transpiled_start)
-        self.transpiled_content = self.name.transpiled_content + '(""'
+        self.transpiled_content = self.name.transpiled_content + "("
 
-        for child in self.children:
-            child.transpile(self.transpiled_start + len(self.transpiled_content))
-            self.transpiled_content += "+" + child.transpiled_content
-
-        self.transpiled_content += ","
+        if not self.self_closing:
+            self.transpiled_content += 'children=""'
+            for child in self.children:
+                child.transpile(self.transpiled_start + len(self.transpiled_content))
+                self.transpiled_content += "+" + child.transpiled_content
+            self.transpiled_content += ","
 
         for argument in self.arguments.values():
             argument.transpile(self.transpiled_start + len(self.transpiled_content))

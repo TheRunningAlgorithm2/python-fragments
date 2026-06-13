@@ -58,7 +58,7 @@ def Layout(children: Children, title: str = "My Blog") -> str:
     </>
 
 
-def PostCard(children: Children, post: Post) -> str:
+def PostCard(post: Post) -> str:
     return <>
         <article classes="post-card">
             <h2>
@@ -70,7 +70,7 @@ def PostCard(children: Children, post: Post) -> str:
     </>
 ```
 
-`Layout` receives `title` as a keyword argument and `children` from whatever is nested inside `<Layout>...</Layout>`. `PostCard` declares `post` explicitly as a typed parameter — it ignores `children` since it's always self-closing.
+`Layout` receives `children` from whatever is nested inside `<Layout>...</Layout>` and `title` as a keyword argument. `PostCard` is always used self-closing, so it declares only `post` — no `children` parameter needed.
 
 ## routes.py
 

@@ -46,3 +46,12 @@ Components with no children can use self-closing syntax:
 ```python
 <Avatar src={{ user.avatar_url }} />
 ```
+
+Self-closing components receive no `children` argument, so there is no need to declare a `children` parameter:
+
+```python
+def Avatar(src: str) -> str:
+    return <>
+        <img src={{ src }} alt="avatar" />
+    </>
+```

@@ -103,19 +103,20 @@ return <>
 **After:**
 
 ```python
-return Layout(f"<h1>"+"Posts"+"</h1>"+''.join(str(PostCard("",post=post)) for post in posts),title="My Blog")
+return Layout(children=""+f"<h1>"+"Posts"+"</h1>"+''.join(str(PostCard(post=post)) for post in posts),title="My Blog")
 ```
 
-`Layout` and `PostCard` are ordinary Python functions — the transpiler calls them with children as the first positional argument (a pre-joined string) and tag attributes as keyword arguments. How those kwargs are received is up to the component:
+`Layout` and `PostCard` are ordinary Python functions. The transpiler passes children as a keyword argument named `children` (a pre-joined string) and tag attributes as additional keyword arguments. Self-closing components receive no `children` argument at all. How kwargs are received is up to the component:
 
 ```python
 from fragments.types import Children
 
-# Accept any attributes with **kwargs
+# Components that receive children declare a children parameter
 def Layout(children: Children, **kwargs: Any) -> str: ...
+def Card(children: Children, classes: str = "") -> str: ...
 
-# Or declare each attribute explicitly for type checking
-def PostCard(children: Children, post: Post) -> str: ...
+# Self-closing components need no children parameter
+def PostCard(post: Post) -> str: ...
 ```
 
 Explicit parameters give you full type checking, refactoring support, and IDE completions with no extra tooling.

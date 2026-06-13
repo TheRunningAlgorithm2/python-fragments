@@ -127,12 +127,20 @@ def test_for_loop_empty():
 # ---------------------------------------------------------------------------
 
 
-def test_component_no_children():
-    def Badge(children: str, label: str) -> str:
+def test_void_component():
+    def Badge(label: str) -> str:
         return f"<span>{label}</span>"
 
     result = render('<><Badge label="hi" /></>', Badge=Badge)
     assert result == "<span>hi</span>"
+
+
+def test_component_no_children():
+    def Badge(children: str, label: str) -> str:
+        return f"<h1>{label}</h1><span>{children}</span>"
+
+    result = render('<><Badge label="hi"></Badge></>', Badge=Badge)
+    assert result == "<h1>hi</h1><span></span>"
 
 
 def test_component_with_children():

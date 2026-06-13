@@ -39,5 +39,6 @@ async def page() -> str:
             <p if={{ True }}>Hello</p>
             <p x-data="{ test: 'a' }">Views: {{ view_counter }}</p>
             <PostCard for={{ post in POSTS }} post={{ post }} />
+            <Children... />
         </Base>
     </>
