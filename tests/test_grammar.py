@@ -263,7 +263,7 @@ def test_component_self_closing():
     source, fragment = grammar.expect_fragment(source)
     assert source.at_end()
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
-        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [])
+        ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [], self_closing=True)
     ]))
 
 
@@ -274,7 +274,7 @@ def test_component_with_double_quote_argument():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "name": ASTComponentArgument(-1, -1, "name", '"hello"', None)
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
@@ -285,7 +285,7 @@ def test_component_with_single_quote_argument():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "name": ASTComponentArgument(-1, -1, "name", "'hello'", None)
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
@@ -296,7 +296,7 @@ def test_component_with_interpolation_argument():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {
             "value": ASTComponentArgument(-1, -1, "value", None, ASTInterpolation(-1, -1, "expr", 1, 1))
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
@@ -307,7 +307,7 @@ def test_component_with_children():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [
             ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "text")], False)
-        ])
+        ], self_closing=False)
     ]))
 
 
@@ -318,7 +318,7 @@ def test_component_whitespace_stripped_from_children():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [
             ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "text")], False)
-        ])
+        ], self_closing=False)
     ]))
 
 
@@ -330,7 +330,7 @@ def test_component_with_if():
         ASTControlNode(-1, -1,
             ASTInterpolation(-1, -1, "condition", 1, 1),
             None,
-            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, []),
+            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [], self_closing=True),
         )
     ]))
 
@@ -343,7 +343,7 @@ def test_component_with_for():
         ASTControlNode(-1, -1,
             None,
             ASTInterpolation(-1, -1, "item in items", 1, 1),
-            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, []),
+            ASTComponent(-1, -1, ASTComponentName(-1, -1, "MyComp"), {}, [], self_closing=True),
         )
     ]))
 
@@ -482,7 +482,7 @@ def test_interpolation_no_trailing_whitespace():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
             "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 1, 0))
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
@@ -493,7 +493,7 @@ def test_interpolation_no_leading_whitespace():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
             "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 0, 1))
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
@@ -504,7 +504,7 @@ def test_interpolation_no_whitespace():
     assert _transpiled(fragment) == _transpiled(ASTFragment(-1, -1, [
         ASTComponent(-1, -1, ASTComponentName(-1, -1, "NotificationBar"), {
             "user": ASTComponentArgument(-1, -1, "user", None, ASTInterpolation(-1, -1, "user", 0, 0))
-        }, [])
+        }, [], self_closing=True)
     ]))
 
 
