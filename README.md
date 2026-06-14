@@ -13,7 +13,7 @@
 
 > **This package is in early development and not yet stable. The API may change without notice between releases.**
 
-Modern HTML template rendering in Python. No build step, no template files, and native HTML awareness out of the box.
+Modern HTML template rendering in Python. No build step, no template files, and native HTML awareness out of the box. [Read More](https://python-fragments.io)
 
 ```python
 from fastapi import APIRouter
