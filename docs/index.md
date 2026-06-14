@@ -173,6 +173,6 @@ Install the language server for inline type errors, completions, and hover docs:
 pip install python-fragments[lsp]
 ```
 
-A **VS Code extension** is included with structural syntax highlighting, semantic tokens, diagnostics, go-to-definition, rename, and more.
+A **[VS Code extension](https://marketplace.visualstudio.com/items?itemName=tra-technologies-ltd.python-fragments)** is available on the Marketplace with structural syntax highlighting, semantic tokens, diagnostics, go-to-definition, rename, and more.
 
 [Full IDE setup guide](getting-started/vs-code.md)
