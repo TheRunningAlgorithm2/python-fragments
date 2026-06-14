@@ -16,17 +16,11 @@
 Modern HTML template rendering in Python. No build step, no template files, and native HTML awareness out of the box.
 
 ```python
-from fragments import loader  # isort: skip
+from fastapi import APIRouter
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from components import Layout, PostCard
+router = APIRouter()
 
-app = FastAPI()
-
-POSTS = [...]
-
-@app.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def index() -> str:
     published = [p for p in POSTS if p.published]
     return <>
