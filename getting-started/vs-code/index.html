@@ -449,6 +449,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1037,6 +1054,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1074,16 +1108,17 @@
 <p>Type checking, completions, hover docs, go-to-definition, and rename work out of the box.</p>
 <p><img alt="VS Code completions demo" src="../../assets/vscode.gif" /></p>
 <h2 id="installation">Installation</h2>
-<p>For the  moment, build and install the extension manually:</p>
+<p>Install the <a href="https://marketplace.visualstudio.com/items?itemName=tra-technologies-ltd.python-fragments">Python Fragments extension</a> from the VS Code Marketplace.</p>
+<p>Install the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python extension</a> and select the interpreter for the environment where <code>python-fragments[lsp]</code> is installed. The extension will automatically start <code>fragments-lsp</code> from that environment.</p>
+<p>If a conflicting Python language server (such as Pylance) is active, the extension will prompt you to disable it on first activation.</p>
+<h3 id="building-from-source">Building from source</h3>
+<p>To build and install the extension manually:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>npm<span class="w"> </span>install<span class="w"> </span>-g<span class="w"> </span>@vscode/vsce
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>vscode-extension
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>npm<span class="w"> </span>install
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>vsce<span class="w"> </span>package
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>code<span class="w"> </span>--install-extension<span class="w"> </span>&lt;filename&gt;.vsix
 </span></code></pre></div>
-<!-- Install the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and select the interpreter for the environment where `python-fragments[lsp]` is installed. The extension will automatically start `fragments-lsp` from that environment. -->
-
-<p>If a conflicting Python language server (such as Pylance) is active, the extension will prompt you to disable it on first activation.</p>
 <h2 id="configuration">Configuration</h2>
 <table>
 <thead>
