@@ -16,11 +16,11 @@ python benchmarks/transpilation/benchmark.py
 
 ```
 Transpiler benchmark (5000 iterations × 5 repeats)
-  Fragments: 138.1 µs
-  Jinja2:    994.6 µs
+  Fragments: 137.9 µs
+  Jinja2:    1031.0 µs
 ```
 
-Fragments transpiles a file like this in 138.1 µs — about 7× faster than Jinja2 compiles an equivalent template. At 7,200 transpilations per second, a file can be transpiled 1,200 times per character typed at a fast typing speed — this will never be the limiting factor in LSP or IDE performance.
+Fragments transpiles a file like this in 137.9 µs — about 7× faster than Jinja2 compiles an equivalent template. At 7,200 transpilations per second, a file can be transpiled 1,200 times per character typed at a fast typing speed — this will never be the limiting factor in LSP or IDE performance.
 
 ## Calls
 
@@ -34,9 +34,9 @@ python benchmarks/calls/benchmark.py
 
 ```
 Call benchmark (10000 iterations × 5 repeats)
-  Fragments:            2.2 µs
-  Jinja2:               5.6 µs
+  Fragments:            2.9 µs
+  Jinja2:               5.8 µs
   String interpolation: 0.7 µs
 ```
 
-Fragments adds a small overhead over raw string interpolation and is significantly faster than Jinja2. For a typical web request this cost is negligible: at 2.2 µs per render, a single millisecond of request budget can fit ~454 fragment renders.
+Fragments adds a small overhead over raw string interpolation and is significantly faster than Jinja2. For a typical web request this cost is negligible: at 2.9 µs per render, a single millisecond of request budget can fit ~344 fragment renders.

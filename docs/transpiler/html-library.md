@@ -9,11 +9,13 @@ The transpiler generates f-strings directly for HTML elements, and imports two r
 | `name` | `str` | The attribute name |
 | `value` | `Any` | The attribute value |
 
+All values are HTML-escaped before being inserted into the attribute string, so characters like `"`, `&`, `<`, and `>` in dynamic values are always safe.
+
 Special cases handled automatically:
 
 - `className` — converted to `class="..."`. Accepts a string or a list of strings (joined with spaces).
 - `style` — converted to `style="..."`. Accepts a string or a dict of CSS properties.
-- `None` — renders as a boolean attribute with no value (e.g. `checked`).
-- `dict` or `list` — JSON-encoded and HTML-escaped.
+- `None` — omits the attribute entirely.
+- `dict` or `list` — JSON-encoded.
 
 **`comment(content)`** renders an HTML comment — it is what `<!-- ... -->` compiles to.
