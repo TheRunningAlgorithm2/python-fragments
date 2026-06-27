@@ -21,12 +21,12 @@ def attribute_to_string(name: str, value: Any) -> str:
         return style_to_string(value)
 
     if isinstance(value, dict) or isinstance(value, list):
-        value = html.escape(json.dumps(value))
+        value = json.dumps(value)
 
     if isinstance(value, bool):
         value = str(value).lower()
 
-    return f'{name}="{value}"'
+    return f'{name}="{html.escape(str(value))}"'
 
 
 def className_to_string(contents: list[str] | str) -> str:
