@@ -1005,12 +1005,13 @@
 </tr>
 </tbody>
 </table>
+<p>All values are HTML-escaped before being inserted into the attribute string, so characters like <code>"</code>, <code>&amp;</code>, <code>&lt;</code>, and <code>&gt;</code> in dynamic values are always safe.</p>
 <p>Special cases handled automatically:</p>
 <ul>
 <li><code>className</code> — converted to <code>class="..."</code>. Accepts a string or a list of strings (joined with spaces).</li>
 <li><code>style</code> — converted to <code>style="..."</code>. Accepts a string or a dict of CSS properties.</li>
-<li><code>None</code> — renders as a boolean attribute with no value (e.g. <code>checked</code>).</li>
-<li><code>dict</code> or <code>list</code> — JSON-encoded and HTML-escaped.</li>
+<li><code>None</code> — omits the attribute entirely.</li>
+<li><code>dict</code> or <code>list</code> — JSON-encoded.</li>
 </ul>
 <p><strong><code>comment(content)</code></strong> renders an HTML comment — it is what <code>&lt;!-- ... --&gt;</code> compiles to.</p>
 
