@@ -94,8 +94,8 @@ class MessageQueue:
                 del self.pending[message_id]
                 continue
 
-    def respond(self, request_id: int | str, response: RESPONSES) -> None:
-        """Send a response to an incoming request."""
+    def respond(self, request_id: int | str, response: RESPONSES | types.ResponseErrorMessage) -> None:
+        """Send a response (or an error response) to an incoming request."""
         response.id = request_id
         message_json: dict[str, Any] = _CONVERTER.unstructure(response)
         message_content_bytes: bytes = json.dumps(message_json).encode()

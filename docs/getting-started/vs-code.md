@@ -26,6 +26,19 @@ code --install-extension <filename>.vsix
 
 ## Configuration
 
-| Setting | Default | Description |
-|---|---|---|
+| Setting                | Default                             | Description                                                                           |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------- |
 | `fragments.serverPath` | _(derived from active interpreter)_ | Override path to the `fragments-lsp` executable. Only needed if auto-detection fails. |
+
+## Format on save
+
+Install `python-fragments[lsp,format]`, then make Python Fragments the formatter for Python files:
+
+```json
+{
+  "[python]": {
+    "editor.defaultFormatter": "tra-technologies-ltd.python-fragments",
+    "editor.formatOnSave": true
+  }
+}
+```

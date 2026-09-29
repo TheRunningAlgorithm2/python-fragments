@@ -61,6 +61,7 @@ nav:
     - Installation: getting-started/installation.md
     - VS Code: getting-started/vs-code.md
     - LSP: getting-started/lsp.md
+    - Pre-commit: getting-started/pre-commit.md
   - Syntax and Usage:
     - Fragments: syntax-and-usage/fragments.md
     - Interpolation: syntax-and-usage/interpolation.md

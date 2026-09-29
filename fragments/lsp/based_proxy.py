@@ -112,6 +112,7 @@ def main() -> None:
         document_highlight,
         document_symbols,
         folding_range,
+        formatting,
         hover,
         inlay_hints,
         lifecycle,
