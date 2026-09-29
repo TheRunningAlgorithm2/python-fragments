@@ -4,9 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-fragments"
-version = "0.36"
+version = "0.37"
 description = "Modern HTML template rendering in Python"
-authors = [{ name = "The Running Algorithm", email = "services@therunningalgorithm.info" }]
+authors = [
+    { name = "The Running Algorithm", email = "services@therunningalgorithm.info" },
+]
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
@@ -30,13 +32,9 @@ Source = "https://github.com/TheRunningAlgorithm2/python-fragments"
 Issues = "https://github.com/TheRunningAlgorithm2/python-fragments/issues"
 
 [project.optional-dependencies]
-lsp = [
-    "basedpyright>=1.39.0",
-    "lsprotocol>=2025.0.0",
-]
-dev = [
-    "pytest>=8.4.1",
-]
+lsp = ["basedpyright>=1.39.0", "lsprotocol>=2025.0.0"]
+dev = ["pytest>=8.4.1"]
+format = ["black>=26.5.1"]
 
 [project.scripts]
 fragments = "fragments.cli:main"
@@ -46,6 +44,4 @@ fragments-lsp = "fragments.lsp.based_proxy:main"
 include = ["fragments*"]
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::pytest.PytestUnraisableExceptionWarning",
-]
+filterwarnings = ["ignore::pytest.PytestUnraisableExceptionWarning"]
