@@ -1,16 +1,35 @@
-from lsprotocol import types
-from lsprotocol.types import REQUESTS, NOTIFICATIONS
+from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 from typing import cast
+
+from lsprotocol import types
+from lsprotocol.types import NOTIFICATIONS, REQUESTS
+
 from fragments.lsp import based_proxy
 from fragments.lsp.based_proxy import handle_from_client
-from fragments.formatter import format_source
 
 
-def formatting_edits(original: str) -> list[types.TextEdit]:
+def formatting_edits(original: str, path: Path | None = None) -> list[types.TextEdit]:
     """Build the edits needed to format a document, or none if it is already formatted or cannot be formatted."""
     try:
-        formatted = format_source(original)
-    except ValueError:  # black.InvalidInput: syntax errors are already reported as diagnostics
+        from fragments.formatter import format_source, load_configuration
+    except ModuleNotFoundError as error:
+        if error.name != "black":
+            raise
+        raise RuntimeError("Formatting requires black: pip install python-fragments[format]") from error
+
+    mode = None
+    if path is not None:
+        # Raises ConfigurationError for a broken config, which the handler reports to the editor.
+        configuration = load_configuration([path])
+        if not configuration.sources:  # excluded by force-exclude, or not a .py file
+            return []
+        mode = configuration.mode
+    try:
+        formatted = format_source(original, mode)
+    except ValueError:
+        # black.InvalidInput: syntax errors are already reported as diagnostics
         return []
 
     if formatted == original:
@@ -24,20 +43,36 @@ def formatting_edits(original: str) -> list[types.TextEdit]:
     return [types.TextEdit(range=whole_document, new_text=formatted)]
 
 
+def _uri_to_path(uri: str) -> Path | None:
+    """NOTE: Replace with Path.from_uri() if/when upgrading to python >=3.13"""
+    parsed = urlparse(uri)
+    if parsed.scheme != "file":
+        return None
+    return Path(url2pathname(parsed.path))
+
+
 @handle_from_client(types.TEXT_DOCUMENT_FORMATTING)
 async def formatting(message: REQUESTS | NOTIFICATIONS) -> None:
     request = cast(types.DocumentFormattingRequest, message)
     original_id = request.id
-    file_state = based_proxy.FILE_STATES.get(request.params.text_document.uri)
+    uri = request.params.text_document.uri
+    file_state = based_proxy.FILE_STATES.get(uri)
+    file_path = _uri_to_path(uri)
 
     # No file state means the document currently fails to parse, so leave it alone.
     try:
-        edits = [] if file_state is None else formatting_edits(file_state.original)
-    except Exception as error:  # e.g. black is not installed; always respond so the client's request never hangs
+        edits = [] if file_state is None else formatting_edits(file_state.original, file_path)
+    except Exception as error:
+        # e.g. black is not installed; always respond so the client's request never hangs
         based_proxy.proxy().respond(
             original_id,
-            types.ResponseErrorMessage(id=original_id, error=types.ResponseError(code=types.ErrorCodes.InternalError, message=str(error))),
+            types.ResponseErrorMessage(
+                id=original_id,
+                error=types.ResponseError(code=types.ErrorCodes.InternalError, message=str(error)),
+            ),
         )
         return
 
-    based_proxy.proxy().respond(original_id, types.DocumentFormattingResponse(id=original_id, result=edits))
+    based_proxy.proxy().respond(
+        original_id, types.DocumentFormattingResponse(id=original_id, result=edits)
+    )

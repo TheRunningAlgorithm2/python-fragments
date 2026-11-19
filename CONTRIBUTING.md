@@ -27,13 +27,18 @@ git clone https://github.com/TheRunningAlgorithm2/python-fragments.git
 cd python-fragments
 python -m venv venv
 source venv/bin/activate
-pip install -e ".[dev,lsp]"
+pip install -e ".[dev,lsp,format,docs]"
 ```
 
 Run the test suite:
 
 ```bash
 python -m pytest tests/ -v
+```
+
+Build and run the docs:
+```bash
+mkdocs serve
 ```
 
 ## What's coming after v1

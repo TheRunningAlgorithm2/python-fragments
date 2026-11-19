@@ -4,17 +4,17 @@ Run the formatter automatically on every commit with [pre-commit](https://pre-co
 
 ## Setup
 
-1. Install pre-commit:
+1.  Install pre-commit:
 
-    ```bash
+    ``` bash
     pip install pre-commit
     ```
 
-2. Add a `.pre-commit-config.yaml` to the root of your repository.
+2.  Add a `.pre-commit-config.yaml` to the root of your repository.
 
     Reference the hook directly from this repository (available from v0.37):
 
-    ```yaml
+    ``` yaml
     repos:
       - repo: https://github.com/TheRunningAlgorithm2/python-fragments
         rev: v0.37
@@ -24,7 +24,7 @@ Run the formatter automatically on every commit with [pre-commit](https://pre-co
 
     Or use a local hook that runs the `fragments` already installed in your environment (requires `pip install python-fragments[format]`):
 
-    ```yaml
+    ``` yaml
     repos:
       - repo: local
         hooks:
@@ -35,15 +35,15 @@ Run the formatter automatically on every commit with [pre-commit](https://pre-co
             types: [python]
     ```
 
-3. Install the git hook:
+3.  Install the git hook:
 
-    ```bash
+    ``` bash
     pre-commit install
     ```
 
-4. Optionally format everything already in the repository:
+4.  Optionally format everything already in the repository:
 
-    ```bash
+    ``` bash
     pre-commit run fragments-format --all-files
     ```
 
@@ -57,16 +57,20 @@ Run the formatter automatically on every commit with [pre-commit](https://pre-co
 
 Use `--check` to fail without changing any files:
 
-```bash
+``` bash
 fragments format --check .
 ```
 
 or run pre-commit itself:
 
-```bash
+``` bash
 pre-commit run --all-files
 ```
 
 ## Replacing Black
 
 Plain Black cannot parse Fragments syntax, so don't run a separate Black hook on the same files. `fragments-format` runs Black itself on the Python around your fragments, so use it in place of a Black hook rather than alongside one.
+
+## Excluding files
+
+Pre-commit passes each staged file by name, so `exclude` and `extend-exclude` in `[tool.black]` don't apply. Use `force-exclude` in `[tool.black]` (see [Excluding files](lsp.md#excluding-files)) or pre-commit's own `exclude:` key on the hook.

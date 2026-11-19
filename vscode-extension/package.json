@@ -7,11 +7,20 @@
   "name": "python-fragments",
   "displayName": "Python Fragments",
   "description": "LSP support for the Python Fragments transpiler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "icon": "logo.png",
-  "categories": ["Programming Languages"],
-  "keywords": ["python", "html", "fragments", "transpiler", "jsx", "lsp"],
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "python",
+    "html",
+    "fragments",
+    "transpiler",
+    "jsx",
+    "lsp"
+  ],
   "galleryBanner": {
     "color": "#111827",
     "theme": "dark"
