@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-fragments"
-version = "0.37"
+version = "0.38"
 description = "Modern HTML template rendering in Python"
 authors = [
     { name = "The Running Algorithm", email = "services@therunningalgorithm.info" },
@@ -34,7 +34,8 @@ Issues = "https://github.com/TheRunningAlgorithm2/python-fragments/issues"
 [project.optional-dependencies]
 lsp = ["basedpyright>=1.39.0", "lsprotocol>=2025.0.0"]
 dev = ["pytest>=8.4.1"]
-format = ["black>=26.5.1"]
+format = ["black>=26.5.1,<27"]
+docs = ["mkdocs>=1.6.1", "mkdocs-material>=9.8.1", "pymdown-extensions>=13.1"]
 
 [project.scripts]
 fragments = "fragments.cli:main"
@@ -45,3 +46,7 @@ include = ["fragments*"]
 
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::pytest.PytestUnraisableExceptionWarning"]
+
+[tool.black]
+line-length = 105
+force-exclude = '^/(examples/formatting\.py|tests/data/)'

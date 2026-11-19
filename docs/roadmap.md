@@ -10,7 +10,7 @@ The focus before v1 is not features: it's foundations. We're using Python Fragme
 
 Once the foundations are solid, we plan to invest heavily in tooling:
 
-- **Black and Ruff formatter support**: fragment syntax should format cleanly without requiring workarounds
+- **Black and Ruff formatter support**: Black formatting of the Python around fragments is available now (see [formatting](getting-started/lsp.md#formatting)). Formatting inside fragments and Ruff support are still to come.
 - **isort and Ruff import sorting**: imports in fragment files should sort correctly alongside regular Python
 - **Linter compatibility**: fragment syntax should not produce false positives in common linters
 - **Better error messages**: transpiler errors should point to the original fragment source, not the transpiled output

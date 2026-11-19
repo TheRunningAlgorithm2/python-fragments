@@ -2,14 +2,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from fragments import formatter, grammar, transpiler
+from fragments import grammar, transpiler
 from fragments.source import Source
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        "fragments", description="Fragments transpilation CLI tool"
-    )
+    parser = argparse.ArgumentParser("fragments", description="Fragments transpilation CLI tool")
     command_parser = parser.add_subparsers(required=True)
     transpile_parser = command_parser.add_parser("transpile")
     transpile_parser.add_argument("--input", type=str, required=True)
@@ -21,11 +19,9 @@ def parse_args() -> argparse.Namespace:
     format_parser.add_argument(
         "paths",
         nargs="*",
-        help="Files or directories to format (directories are searched for *.py)",
+        help="Files or directories to format (directories are searched like Black does, honouring [tool.black] excludes)",
     )
-    format_parser.add_argument(
-        "--input", action="append", default=[], help="Same as a positional path"
-    )
+    format_parser.add_argument("--input", action="append", default=[], help="Same as a positional path")
     format_parser.add_argument(
         "--check",
         action="store_true",
@@ -58,21 +54,14 @@ def ast(args: argparse.Namespace) -> None:
     print(module_ast)
 
 
-def _expand_paths(paths: list[str]) -> list[Path]:
-    """Expand directories into the Python files inside them, skipping hidden directories such as .venv."""
-    expanded: list[Path] = []
-    for path in map(Path, paths):
-        if not path.is_dir():
-            expanded.append(path)
-            continue
-        expanded.extend(
-            candidate
-            for candidate in sorted(path.rglob("*.py"))
-            if not any(
-                part.startswith(".") for part in candidate.relative_to(path).parts
-            )
-        )
-    return expanded
+def _display(path: Path) -> Path:
+    """Show a path relative to the working directory when it is inside it, as Black's output does."""
+    if not path.is_absolute():
+        return path
+    try:
+        return path.relative_to(Path.cwd())
+    except ValueError:
+        return path
 
 
 def _line_and_column(source: str, offset: int) -> tuple[int, int]:
@@ -84,30 +73,43 @@ def _line_and_column(source: str, offset: int) -> tuple[int, int]:
 
 def format(args: argparse.Namespace) -> None:
     """Format the Python surrounding fragments in the specified files, leaving the fragments untouched."""
-    paths = _expand_paths(args.paths + args.input)
-    if not paths:
+    try:
+        from fragments import formatter
+    except ModuleNotFoundError as error:
+        if error.name != "black":
+            raise
+        print(
+            "Formatting requires black: pip install python-fragments[format]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    requested = [Path(path) for path in args.paths + args.input]
+    if not requested:
         print("fragments format: no files given", file=sys.stderr)
         sys.exit(2)
 
+    try:
+        configuration = formatter.load_configuration(requested)
+    except formatter.ConfigurationError as error:
+        print(f"fragments format: {error}", file=sys.stderr)
+        sys.exit(2)
+
     failed = False
-    for path in paths:
-        source = path.read_text()
+    for source_path in configuration.sources:
+        path = _display(source_path)
+        source = source_path.read_text()
         try:
-            formatted = formatter.format_source(source)
+            formatted = formatter.format_source(source, configuration.mode)
         except grammar.ParsingError as error:
             line, column = _line_and_column(source, error.source_start)
             print(f"{path}:{line}:{column}: {error}", file=sys.stderr)
             failed = True
             continue
-        except (
-            ValueError
-        ) as error:  # black.InvalidInput: the Python around the fragments is invalid
+        except ValueError as error:  # black.InvalidInput: the Python around the fragments is invalid
             print(f"{path}: {error}", file=sys.stderr)
             failed = True
             continue
-        except RuntimeError as error:  # black is not installed
-            print(error, file=sys.stderr)
-            sys.exit(2)
 
         if args.dry_run:
             print(formatted, end="")
@@ -118,7 +120,7 @@ def format(args: argparse.Namespace) -> None:
             print(f"would reformat {path}", file=sys.stderr)
             failed = True
             continue
-        path.write_text(formatted)
+        source_path.write_text(formatted)
         print(f"reformatted {path}", file=sys.stderr)
 
     if failed:

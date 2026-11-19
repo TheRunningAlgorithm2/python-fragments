@@ -16,7 +16,7 @@ If a conflicting Python language server (such as Pylance) is active, the extensi
 
 To build and install the extension manually:
 
-```bash
+``` bash
 npm install -g @vscode/vsce
 cd vscode-extension
 npm install
@@ -34,7 +34,7 @@ code --install-extension <filename>.vsix
 
 Install `python-fragments[lsp,format]`, then make Python Fragments the formatter for Python files:
 
-```json
+``` json
 {
   "[python]": {
     "editor.defaultFormatter": "tra-technologies-ltd.python-fragments",
@@ -42,3 +42,5 @@ Install `python-fragments[lsp,format]`, then make Python Fragments the formatter
   }
 }
 ```
+
+Formatting uses the `[tool.black]` settings from your project's `pyproject.toml`. After changing `[tool.black]`, run **Python Fragments: Restart Server** for the change to apply.

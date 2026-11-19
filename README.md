@@ -35,6 +35,8 @@ async def index() -> str:
 
 Type checking, completions, hover docs, go-to-definition, rename, and semantic highlighting. All working inside fragment syntax.
 
+Code formatting with [Black](https://black.readthedocs.io/en/stable/index.html) is also supported.
+
 Install the [Python Fragments VS Code extension](https://marketplace.visualstudio.com/items?itemName=tra-technologies-ltd.python-fragments) to get started.
 
 ![VS Code completions demo](docs/assets/vscode.gif)

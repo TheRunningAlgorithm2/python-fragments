@@ -4,7 +4,6 @@ Type checking, completions, hover docs, go-to-definition, and rename work out of
 
 ![VS Code completions demo](../assets/vscode.gif)
 
-
 ## Features
 
 - **Diagnostics** — type errors and undefined names reported inline
@@ -25,13 +24,13 @@ Not yet implemented:
 
 ## Installation
 
-```bash
+``` bash
 pip install python-fragments[lsp]
 ```
 
 Then start the language server:
 
-```bash
+``` bash
 fragments-lsp
 ```
 
@@ -39,7 +38,7 @@ fragments-lsp
 
 Install the `format` extra to enable formatting:
 
-```bash
+``` bash
 pip install python-fragments[format]
 ```
 
@@ -47,12 +46,26 @@ Python code is formatted with [Black](https://black.readthedocs.io/); everything
 
 ### Command line and pre-commit
 
-```bash
+``` bash
 fragments format src/ app.py     # format files or directories in place
 fragments format --check src/    # exit 1 if any file would change
 fragments format --dry-run app.py # print to stdout instead of writing
 ```
 
-Parse errors are reported as `path:line:column: message` and the remaining files are still formatted. Directories are searched for `*.py`, skipping hidden directories such as `.venv`.
+Parse errors are reported as `path:line:column: message` and the remaining files are still formatted.
 
 To run it automatically on every commit, see [Pre-commit](pre-commit.md).
+
+| Exit code | Meaning                                                                              |
+| --------- | ------------------------------------------------------------------------------------ |
+| 0         | Success                                                                              |
+| 1         | A file failed to parse                                                               |
+| 2         | No files given, a path doesn't exist, or the `[tool.black]` configuration is invalid |
+
+### Configuration
+
+Black's settings are read from `[tool.black]` in your `pyproject.toml`.
+
+See the Black [docs](https://black.readthedocs.io/en/stable/index.html) for more info.
+
+Black caches the configuration it reads, so restart the language server after changing `[tool.black]`.
