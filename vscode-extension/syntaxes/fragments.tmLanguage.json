@@ -20,8 +20,62 @@
         { "include": "#closing-tag" },
         { "include": "#children-slot" },
         { "include": "#template-open-tag" },
+        { "include": "#script-element" },
+        { "include": "#style-element" },
         { "include": "#open-tag" },
         { "include": "#interpolation" }
+      ]
+    },
+    "script-element": {
+      "begin": "(<)(script)(?![a-zA-Z0-9_:.-])",
+      "end": "(/>)|(</)(script)\\s*(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "entity.name.tag.fragment" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "punctuation.definition.tag.fragment" },
+        "3": { "name": "entity.name.tag.fragment" },
+        "4": { "name": "punctuation.definition.tag.fragment" }
+      },
+      "patterns": [
+        {
+          "begin": "(>)",
+          "end": "(?=</script\\s*>)",
+          "beginCaptures": { "1": { "name": "punctuation.definition.tag.fragment" } },
+          "contentName": "meta.embedded.block.javascript",
+          "patterns": [
+            { "include": "source.js" }
+          ]
+        },
+        { "include": "#tag-attributes" }
+      ]
+    },
+    "style-element": {
+      "begin": "(<)(style)(?![a-zA-Z0-9_:.-])",
+      "end": "(/>)|(</)(style)\\s*(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "entity.name.tag.fragment" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "punctuation.definition.tag.fragment" },
+        "3": { "name": "entity.name.tag.fragment" },
+        "4": { "name": "punctuation.definition.tag.fragment" }
+      },
+      "patterns": [
+        {
+          "begin": "(>)",
+          "end": "(?=</style\\s*>)",
+          "beginCaptures": { "1": { "name": "punctuation.definition.tag.fragment" } },
+          "contentName": "meta.embedded.block.css",
+          "patterns": [
+            { "include": "source.css" }
+          ]
+        },
+        { "include": "#tag-attributes" }
       ]
     },
     "comment": {

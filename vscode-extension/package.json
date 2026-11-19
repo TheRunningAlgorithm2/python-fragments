@@ -42,7 +42,9 @@
         ],
         "embeddedLanguages": {
           "meta.embedded.html.fragment": "html",
-          "meta.embedded.js.alpine": "javascript"
+          "meta.embedded.js.alpine": "javascript",
+          "meta.embedded.block.javascript": "javascript",
+          "meta.embedded.block.css": "css"
         }
       }
     ],

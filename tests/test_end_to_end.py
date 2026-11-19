@@ -305,3 +305,53 @@ def test_boolean_attribute_true_or_none_value():
 
 def test_boolean_attribute_false_or_none_value():
     assert render("<><input disabled={{ False or None }} /></>") == "<input  />"
+
+
+# ---------------------------------------------------------------------------
+# Text escaping
+# ---------------------------------------------------------------------------
+
+
+def test_text_with_double_quotes():
+    assert render('<><p>He said "hi"</p></>') == '<p>He said "hi"</p>'
+
+
+def test_text_with_backslash():
+    assert render(r"<><p>C:\temp</p></>") == r"<p>C:\temp</p>"
+
+
+def test_comment_with_double_quotes():
+    assert render('<><!-- "quoted" --></>') == '<!--  "quoted"  -->'
+
+
+# ---------------------------------------------------------------------------
+# Scripts and styles
+# ---------------------------------------------------------------------------
+
+
+def test_script_body_is_verbatim():
+    body = r"""
+    if (a < b && c > d) { console.log("x\n", '{{ y }}', `</>`); }
+"""
+    assert render(f"<><script>{body}</script></>") == f"<script>{body}</script>"
+
+
+def test_style_body_is_verbatim():
+    body = "\n    .card > h2 { content: \"\\201C\"; }\n"
+    assert render(f"<><style>{body}</style></>") == f"<style>{body}</style>"
+
+
+def test_script_with_interpolated_attribute():
+    assert render("<><script nonce={{ nonce }}>run()</script></>", nonce="abc") == '<script nonce="abc">run()</script>'
+
+
+def test_script_if_false():
+    assert render("<><script if={{ False }}>run()</script></>") == ""
+
+
+def test_script_self_closing_is_transpiled_as_written():
+    assert render('<><script src="app.js" /></>') == '<script src="app.js" />'
+
+
+def test_script_closing_tag_whitespace():
+    assert render("<><script>run()</script ></>") == "<script>run()</script>"

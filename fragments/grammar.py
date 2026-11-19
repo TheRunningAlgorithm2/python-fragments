@@ -7,6 +7,7 @@ from fragments.ast_nodes import (
     ASTComponentArgument,
     ASTComponentName,
     ASTControlNode,
+    ASTCSSText,
     ASTDoctype,
     ASTFragment,
     ASTHTMLAttribute,
@@ -14,9 +15,12 @@ from fragments.ast_nodes import (
     ASTHTMLElement,
     ASTHTMLText,
     ASTInterpolation,
+    ASTJSText,
     ASTModule,
     ASTPython,
     ASTHTMLChild,
+    ASTScript,
+    ASTStyle,
     ASTTemplate,
 )
 from fragments.source import Source
@@ -26,6 +30,10 @@ HTML_ATTRIBUTE_NAME = r"[a-zA-Z:-_][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"([\s\S]*?)(?=<|{{)"
 TEMPLATE_OPENING = r"<Template(?![a-zA-Z0-9_])"
 TEMPLATE_ATTRIBUTES = ("if", "for")
+SCRIPT_OPENING = r"<script(?![a-zA-Z0-9_:.-])"
+SCRIPT_CLOSING = r"</script\s*>"
+STYLE_OPENING = r"<style(?![a-zA-Z0-9_:.-])"
+STYLE_CLOSING = r"</style\s*>"
 
 
 class ParsingError(Exception):
@@ -148,6 +156,14 @@ def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
     if source.start_matches(r"<[A-Z]"):
         source, component = expect_component(source)
         return source, component
+
+    if source.start_matches(SCRIPT_OPENING):
+        source, script = expect_script(source)
+        return source, script
+
+    if source.start_matches(STYLE_OPENING):
+        source, style = expect_style(source)
+        return source, style
 
     if source.starts_with("<"):
         source, html_element = expect_html_element(source)
@@ -279,28 +295,7 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement | ASTCon
     source, _ = source.eat_whitespace()
     source, name = expect_regex(source, HTML_IDENTIFIER, "element name")
     source, _ = source.eat_whitespace()
-
-    attributes: dict[str, ASTHTMLAttribute] = {}
-    while not (source.remaining().startswith(">") or source.remaining().startswith("/>")):
-        attribute_source_start = source.offset
-        source, attribute_name = expect_regex(source, HTML_ATTRIBUTE_NAME, "attribute name")
-        if not source.remaining().startswith("="):
-            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, None)
-            attributes[attribute_name] = attribute
-            source, _ = source.eat_whitespace()
-            continue
-        source = expect_string(source, "=")
-
-        if source.remaining().startswith('"'):
-            source, string_literal = expect_string_literal(source)
-            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, string_literal, None)
-            attributes[attribute_name] = attribute
-        elif source.remaining().startswith("{{"):
-            source, interpolation = expect_interpolation(source)
-            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, interpolation)
-            attributes[attribute_name] = attribute
-
-        source, _ = source.eat_whitespace()
+    source, attributes = expect_html_attributes(source)
 
     if_attribute = attributes.pop("if") if "if" in attributes else None
     for_attribute = attributes.pop("for") if "for" in attributes else None
@@ -333,6 +328,99 @@ def expect_html_element(source: Source) -> tuple[Source, ASTHTMLElement | ASTCon
         for_attribute.interpolation if for_attribute is not None else None,
     )
     return source, html_element
+
+
+def expect_html_attributes(source: Source) -> tuple[Source, dict[str, ASTHTMLAttribute]]:
+    """The attributes of an HTML opening tag, up to (but not including) the closing `>` or `/>`."""
+    attributes: dict[str, ASTHTMLAttribute] = {}
+    while not (source.remaining().startswith(">") or source.remaining().startswith("/>")):
+        attribute_source_start = source.offset
+        source, attribute_name = expect_regex(source, HTML_ATTRIBUTE_NAME, "attribute name")
+        if not source.remaining().startswith("="):
+            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, None)
+            attributes[attribute_name] = attribute
+            source, _ = source.eat_whitespace()
+            continue
+        source = expect_string(source, "=")
+
+        if source.remaining().startswith('"'):
+            source, string_literal = expect_string_literal(source)
+            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, string_literal, None)
+            attributes[attribute_name] = attribute
+        elif source.remaining().startswith("{{"):
+            source, interpolation = expect_interpolation(source)
+            attribute = ASTHTMLAttribute(attribute_source_start, source.offset, attribute_name, None, interpolation)
+            attributes[attribute_name] = attribute
+
+        source, _ = source.eat_whitespace()
+
+    return source, attributes
+
+
+def expect_script(source: Source) -> tuple[Source, ASTScript | ASTControlNode[ASTScript]]:
+    """A `<script>` element. Its body is raw JavaScript, passed through verbatim up to the closing `</script>`."""
+    source_start = source.offset
+    source, _ = expect_regex(source, SCRIPT_OPENING, "<script")
+    source, _ = source.eat_whitespace()
+    source, attributes = expect_html_attributes(source)
+
+    if_attribute = attributes.pop("if") if "if" in attributes else None
+    for_attribute = attributes.pop("for") if "for" in attributes else None
+
+    if source.starts_with("/>"):
+        source = expect_string(source, "/>")
+        return source, ASTControlNode[ASTScript].wrap_child(
+            ASTScript(source_start, source.offset, attributes, None),
+            if_attribute.interpolation if if_attribute is not None else None,
+            for_attribute.interpolation if for_attribute is not None else None,
+        )
+
+    source = expect_string(source, ">")
+    closing_tag: Match[str] | None = re.search(SCRIPT_CLOSING, source.remaining())
+    if closing_tag is None:
+        raise ParsingError("Unclosed <script> element", source_start)
+
+    body = ASTJSText(source.offset, source.offset + closing_tag.start(), source.remaining()[: closing_tag.start()])
+    source = source.eat(closing_tag.end())
+
+    return source, ASTControlNode[ASTScript].wrap_child(
+        ASTScript(source_start, source.offset, attributes, body),
+        if_attribute.interpolation if if_attribute is not None else None,
+        for_attribute.interpolation if for_attribute is not None else None,
+    )
+
+
+def expect_style(source: Source) -> tuple[Source, ASTStyle | ASTControlNode[ASTStyle]]:
+    """A `<style>` element. Its body is raw CSS, passed through verbatim up to the closing `</style>`."""
+    source_start = source.offset
+    source, _ = expect_regex(source, STYLE_OPENING, "<style")
+    source, _ = source.eat_whitespace()
+    source, attributes = expect_html_attributes(source)
+
+    if_attribute = attributes.pop("if") if "if" in attributes else None
+    for_attribute = attributes.pop("for") if "for" in attributes else None
+
+    if source.starts_with("/>"):
+        source = expect_string(source, "/>")
+        return source, ASTControlNode[ASTStyle].wrap_child(
+            ASTStyle(source_start, source.offset, attributes, None),
+            if_attribute.interpolation if if_attribute is not None else None,
+            for_attribute.interpolation if for_attribute is not None else None,
+        )
+
+    source = expect_string(source, ">")
+    closing_tag: Match[str] | None = re.search(STYLE_CLOSING, source.remaining())
+    if closing_tag is None:
+        raise ParsingError("Unclosed <style> element", source_start)
+
+    body = ASTCSSText(source.offset, source.offset + closing_tag.start(), source.remaining()[: closing_tag.start()])
+    source = source.eat(closing_tag.end())
+
+    return source, ASTControlNode[ASTStyle].wrap_child(
+        ASTStyle(source_start, source.offset, attributes, body),
+        if_attribute.interpolation if if_attribute is not None else None,
+        for_attribute.interpolation if for_attribute is not None else None,
+    )
 
 
 def expect_children(source: Source) -> tuple[Source, list[ASTHTMLChild]]:

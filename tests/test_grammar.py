@@ -7,6 +7,7 @@ from fragments.ast_nodes import (
     ASTComponentArgument,
     ASTComponentName,
     ASTControlNode,
+    ASTCSSText,
     ASTDoctype,
     ASTFragment,
     ASTHTMLAttribute,
@@ -14,7 +15,10 @@ from fragments.ast_nodes import (
     ASTHTMLElement,
     ASTHTMLText,
     ASTInterpolation,
+    ASTJSText,
     ASTHTMLChild,
+    ASTScript,
+    ASTStyle,
     ASTTemplate,
 )
 from fragments.grammar import ParsingError
@@ -22,7 +26,7 @@ from fragments.source import Source
 from fragments.transpiled_code_writer import TranspiledCodeWriter
 
 
-def _transpiled_content(node: ASTHTMLChild | ASTHTMLAttribute, source_string: str) -> str:
+def _transpiled_content(node: ASTHTMLChild | ASTHTMLAttribute | ASTJSText, source_string: str) -> str:
     """Transpile a single node on its own."""
     writer = TranspiledCodeWriter(source_string)
     node.transpile(writer)
@@ -530,6 +534,163 @@ def test_template_rejects_self_closing():
 def test_template_mismatched_closing_tag():
     with pytest.raises(ParsingError):
         grammar.expect_fragment(Source.from_string("<><Template></div></>"))
+
+
+# ---------------------------------------------------------------------------
+# Scripts and styles
+# ---------------------------------------------------------------------------
+
+
+def test_script_body_is_raw_text():
+    source = Source.from_string("<><script>if (a < b) { f('{{ x }}', '</>', '<!--'); }</script></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {}, ASTJSText(-1, -1, "if (a < b) { f('{{ x }}', '</>', '<!--'); }"))
+    ])
+
+
+def test_style_body_is_raw_text():
+    source = Source.from_string("<><style>.card > h2 { margin: 0; }</style></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTStyle(-1, -1, {}, ASTCSSText(-1, -1, ".card > h2 { margin: 0; }"))
+    ])
+
+
+def test_script_body_whitespace_is_preserved():
+    source = Source.from_string("<><script>\n    run();\n  </script></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {}, ASTJSText(-1, -1, "\n    run();\n  "))
+    ])
+
+
+def test_script_empty_body():
+    source = Source.from_string("<><script></script></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {}, ASTJSText(-1, -1, ""))
+    ])
+
+
+def test_script_body_source_offsets():
+    source = Source.from_string("<><script>run()</script></>")
+    _, fragment = grammar.expect_fragment(source)
+    script = fragment.children[0]
+    assert isinstance(script, ASTScript)
+    assert script.body is not None
+    assert (script.body.source_start, script.body.source_end) == (10, 15)
+
+
+def test_script_closing_tag_allows_whitespace():
+    source = Source.from_string("<><script>run()</script \n></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {}, ASTJSText(-1, -1, "run()"))
+    ])
+
+
+def test_script_body_ends_at_first_closing_tag():
+    source = Source.from_string("<><script>a</script><p>b</p></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {}, ASTJSText(-1, -1, "a")),
+        ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "b")], False),
+    ])
+
+
+def test_script_closing_tag_is_case_sensitive():
+    with pytest.raises(ParsingError):
+        grammar.expect_fragment(Source.from_string("<><script>run()</SCRIPT></>"))
+
+
+def test_script_closing_tag_rejects_slash():
+    with pytest.raises(ParsingError):
+        grammar.expect_fragment(Source.from_string("<><script>run()</script/></>"))
+
+
+def test_style_body_not_ended_by_script_closing_tag():
+    source = Source.from_string("<><style>a</script>b</style></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTStyle(-1, -1, {}, ASTCSSText(-1, -1, "a</script>b"))
+    ])
+
+
+def test_script_unclosed_points_at_opening_tag():
+    with pytest.raises(ParsingError) as error:
+        grammar.expect_fragment(Source.from_string("<><script>run()</>"))
+    assert str(error.value) == "Unclosed <script> element"
+    assert error.value.source_start == 2
+
+
+def test_style_unclosed_points_at_opening_tag():
+    with pytest.raises(ParsingError) as error:
+        grammar.expect_fragment(Source.from_string("<><style>body {}</>"))
+    assert str(error.value) == "Unclosed <style> element"
+    assert error.value.source_start == 2
+
+
+def test_script_attributes():
+    source = Source.from_string('<><script src="app.js" nonce={{ nonce }} defer></script></>')
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {
+            "src": ASTHTMLAttribute(-1, -1, "src", '"app.js"', None),
+            "nonce": ASTHTMLAttribute(-1, -1, "nonce", None, ASTInterpolation(-1, -1, -1, "nonce")),
+            "defer": ASTHTMLAttribute(-1, -1, "defer", None, None),
+        }, ASTJSText(-1, -1, ""))
+    ])
+
+
+def test_style_with_if():
+    source = Source.from_string("<><style if={{ dark }}>body {}</style></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTControlNode(-1, -1, ASTInterpolation(-1, -1, -1, "dark"), None,
+            ASTStyle(-1, -1, {}, ASTCSSText(-1, -1, "body {}"))
+        )
+    ])
+
+
+def test_script_self_closing_is_kept():
+    source = Source.from_string('<><script src="app.js" /></>')
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTScript(-1, -1, {
+            "src": ASTHTMLAttribute(-1, -1, "src", '"app.js"', None),
+        }, None)
+    ])
+
+
+def test_element_prefixed_with_script_is_normal_element():
+    source = Source.from_string("<><scripts><b>x</b></scripts></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTHTMLElement(-1, -1, "scripts", {}, [
+            ASTHTMLElement(-1, -1, "b", {}, [ASTHTMLText(-1, -1, "x")], False)
+        ], False)
+    ])
+
+
+def test_script_body_transpiles_to_python_literal():
+    source = Source.from_string("<><script>f(\"a\\n\", 'b')</script></>")
+    _, fragment = grammar.expect_fragment(source)
+    script = fragment.children[0]
+    assert isinstance(script, ASTScript)
+    assert script.body is not None
+    assert _transpiled_content(script.body, source.content) == repr("f(\"a\\n\", 'b')")
 
 
 # ---------------------------------------------------------------------------

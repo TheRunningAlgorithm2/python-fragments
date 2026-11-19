@@ -68,6 +68,7 @@ nav:
     - Control Flow: syntax-and-usage/control-flow.md
     - Components: syntax-and-usage/components.md
     - Comments: syntax-and-usage/comments.md
+    - Scripts and Styles: syntax-and-usage/scripts-and-styles.md
   - Integrations:
     - Overview: integrations/index.md
     - Formatting:

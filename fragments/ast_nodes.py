@@ -3,7 +3,7 @@ from typing import Sequence
 
 from fragments.transpiled_code_writer import TranspiledCodeWriter
 
-type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode[ASTHTMLElement] | ASTControlNode[ASTComponent] | ASTControlNode[ASTTemplate] | ASTDoctype | ASTChildrenSlot | ASTTemplate
+type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTScript | ASTStyle | ASTControlNode[ASTHTMLElement] | ASTControlNode[ASTComponent] | ASTControlNode[ASTTemplate] | ASTControlNode[ASTScript] | ASTControlNode[ASTStyle] | ASTDoctype | ASTChildrenSlot | ASTTemplate
 
 IMPORT_PREFIX = "from fragments.html.elements import attribute_to_string, comment\n"
 IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)
@@ -84,7 +84,7 @@ class ASTHTMLElement:
 
 
 @dataclass(slots=True)
-class ASTControlNode[T: (ASTHTMLElement, ASTComponent, ASTTemplate)]:
+class ASTControlNode[T: (ASTHTMLElement, ASTComponent, ASTTemplate, ASTScript, ASTStyle)]:
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
 
@@ -222,8 +222,7 @@ class ASTHTMLComment:
     content: str
 
     def transpile(self, writer: TranspiledCodeWriter) -> None:
-        escaped_content = self.content.replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r").replace('"', '\\"')
-        writer.write(f'comment("{escaped_content}")')
+        writer.write(f"comment({self.content!r})")
 
 
 @dataclass(slots=True)
@@ -258,8 +257,83 @@ class ASTHTMLText:
     text: str
 
     def transpile(self, writer: TranspiledCodeWriter) -> None:
-        escaped_text = self.text.replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r").replace('"', '"')
-        writer.write(f'"{escaped_text}"')
+        writer.write(repr(self.text))
+
+
+@dataclass(slots=True)
+class ASTScript:
+    """A `<script>` element. `body` is `None` when the tag is self-closing."""
+
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    attributes: dict[str, "ASTHTMLAttribute"]
+    body: "ASTJSText | None"
+
+    def transpile(self, writer: TranspiledCodeWriter) -> None:
+        writer.write('f"<script')
+        for attribute in self.attributes.values():
+            writer.write(" ")
+            attribute.transpile(writer)
+
+        if self.body is None:
+            writer.write(' />"')
+            return
+
+        writer.write('>"+')
+        self.body.transpile(writer)
+        writer.write('+"</script>"')
+
+
+@dataclass(slots=True)
+class ASTJSText:
+    """The raw body of a `<script>` element, passed through verbatim."""
+
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    text: str
+
+    def transpile(self, writer: TranspiledCodeWriter) -> None:
+        writer.write(repr(self.text))
+
+
+@dataclass(slots=True)
+class ASTStyle:
+    """A `<style>` element. `body` is `None` when the tag is self-closing."""
+
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    attributes: dict[str, "ASTHTMLAttribute"]
+    body: "ASTCSSText | None"
+
+    def transpile(self, writer: TranspiledCodeWriter) -> None:
+        writer.write('f"<style')
+        for attribute in self.attributes.values():
+            writer.write(" ")
+            attribute.transpile(writer)
+
+        if self.body is None:
+            writer.write(' />"')
+            return
+
+        writer.write('>"+')
+        self.body.transpile(writer)
+        writer.write('+"</style>"')
+
+
+@dataclass(slots=True)
+class ASTCSSText:
+    """The raw body of a `<style>` element, passed through verbatim."""
+
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    text: str
+
+    def transpile(self, writer: TranspiledCodeWriter) -> None:
+        writer.write(repr(self.text))
 
 
 @dataclass(slots=True)

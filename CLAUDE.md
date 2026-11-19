@@ -33,6 +33,6 @@ Key design decisions:
 
 The extension (`vscode-extension/`) has two layers:
 
-1. **TextMate grammar** (`syntaxes/fragments.tmLanguage.json`) — syntactic highlighting for fragment syntax (`<>`, `</>`, tags, `{{ }}`). Injected with `L:source.python` (the `L:` prefix means prepend/higher priority — do not remove it). The interpolation rule does **not** include `source.python` patterns; semantic tokens cover interpolation content.
+1. **TextMate grammar** (`syntaxes/fragments.tmLanguage.json`) — syntactic highlighting for fragment syntax (`<>`, `</>`, tags, `{{ }}`). Injected with `L:source.python` (the `L:` prefix means prepend/higher priority — do not remove it). The interpolation rule includes `source.python` for baseline highlighting, which Pyright's semantic tokens then refine. `<script>` and `<style>` bodies embed `source.js` and `source.css`; they are never mapped to Python, so TextMate is their only highlighting layer.
 
-2. **LSP client** — starts `fragments-lsp` and connects it as a `LanguageClient`. Pyright's semantic tokens provide type-aware highlighting for Python code; the TextMate grammar provides structural highlighting for fragment syntax. These two layers are complementary and non-overlapping.
+2. **LSP client** — starts `fragments-lsp` and connects it as a `LanguageClient`. Pyright's semantic tokens provide type-aware highlighting for Python code; the TextMate grammar provides structural highlighting for fragment syntax. Semantic tokens take precedence wherever both apply.
