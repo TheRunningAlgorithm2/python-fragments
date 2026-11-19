@@ -38,7 +38,7 @@ async def page() -> str:
     return <>
         <Base title="Test" header="Test Header">
             <p if={{ True }}>Hello</p>
-            <p x-data={{ { test: "a" } }}>Views: {{ view_counter }}</p>
+            <p x-data={{ { "test": "a" } }}>Views: {{ view_counter }}</p>
             <Template if={{ len(POSTS) > 0 }}>
                 <PostCard for={{ post in POSTS }} post={{ post }} />
             </Template>

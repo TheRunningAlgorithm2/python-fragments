@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { PythonExtension } from "@vscode/python-extension";
-import { LanguageClient, LanguageClientOptions, ServerOptions, State as ClientState, CloseAction, ErrorAction } from "vscode-languageclient/node";
+import { LanguageClient, LanguageClientOptions, ServerOptions, State as ClientState, StateChangeEvent, CloseAction, ErrorAction } from "vscode-languageclient/node";
 
 type ExtensionState =
   | "Inactive"
@@ -16,6 +16,8 @@ type ExtensionState =
   | "FragmentsLspFailed";
 
 let currentState: ExtensionState = "Inactive";
+let stateMachineBusy: boolean = false;
+let restartPending: boolean = false;
 let client: LanguageClient | undefined;
 let clientStateListener: vscode.Disposable | undefined;
 let serverWatcher: fs.FSWatcher | undefined;
@@ -23,6 +25,37 @@ let statusItem: vscode.LanguageStatusItem;
 let resolvedBinaryPath: string = "";
 let pythonApi: PythonExtension | undefined;
 
+// Restarts the language server. If the state machine is busy, the restart runs once it settles,
+// and any further requests in the meantime collapse into that one restart.
+function requestRestart(): void {
+  if (stateMachineBusy) {
+    restartPending = true;
+    return;
+  }
+  void runStateMachine("RestartingFragmentsLsp");
+}
+
+// True when the state machine has settled in `state` and is waiting for input.
+function restingIn(state: ExtensionState): boolean {
+  return !stateMachineBusy && currentState === state;
+}
+
+// Runs the state machine from `state` until it settles in a state that waits for input, then runs
+// any restart requested in the meantime. Only call this while the machine is not busy.
+async function runStateMachine(state: ExtensionState, detail: string = ""): Promise<void> {
+  stateMachineBusy = true;
+  try {
+    await transition(state, detail);
+  } finally {
+    stateMachineBusy = false;
+  }
+
+  if (!restartPending) return;
+  restartPending = false;
+  await runStateMachine("RestartingFragmentsLsp");
+}
+
+// Only called from inside state entry functions. Everything else goes through requestRestart() or runStateMachine().
 async function transition(state: ExtensionState, detail: string = ""): Promise<void> {
   currentState = state;
   updateStatusItem(detail);
@@ -110,8 +143,6 @@ async function enterCheckingExtensionConflicts(): Promise<void> {
   const languageServer = vscode.workspace.getConfiguration("python").get<string>("languageServer");
   const basedPyrightInstalled = vscode.extensions.getExtension("detachhead.basedpyright") !== undefined;
 
-  if (currentState !== "CheckingExtensionConflicts") return;
-
   if (languageServer !== undefined && languageServer !== "None") {
     await transition(
       "LspConflictDetected",
@@ -132,13 +163,14 @@ async function enterCheckingExtensionConflicts(): Promise<void> {
 }
 
 async function enterLspConflictDetected(): Promise<void> {
-  const choice = await vscode.window.showWarningMessage(
+  // Not awaited: the prompt can stay open indefinitely and must not keep the state machine busy.
+  void vscode.window.showWarningMessage(
     `Python Fragments: ${statusItem.detail} Click "Resolve Conflict" in the Python Fragments status (bottom-right language indicator) to fix this.`,
     "Resolve Conflict"
-  );
-  if (choice === "Resolve Conflict") {
-    await resolveConflict();
-  }
+  ).then((choice: string | undefined) => {
+    if (choice !== "Resolve Conflict") return;
+    void resolveConflict();
+  });
 }
 
 async function resolveConflict(): Promise<void> {
@@ -165,7 +197,9 @@ async function resolveConflict(): Promise<void> {
     return;
   }
 
-  await transition("CheckingExtensionConflicts");
+  // Changing python.languageServer above may already have triggered the re-check.
+  if (!restingIn("LspConflictDetected")) return;
+  await runStateMachine("CheckingExtensionConflicts");
 }
 
 async function enterLocatingFragmentsLsp(): Promise<void> {
@@ -181,7 +215,9 @@ async function enterLocatingFragmentsLsp(): Promise<void> {
       pythonApi = await PythonExtension.api().catch(() => undefined);
     }
 
-    if (currentState !== "LocatingFragmentsLsp") return;
+    // Before the Python extension finishes loading, the active environment may not be the one it
+    // settles on. Waiting avoids starting the server with one interpreter only to restart it with another.
+    await pythonApi?.ready.catch(() => undefined);
 
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     const environmentPath = pythonApi?.environments.getActiveEnvironmentPath(workspaceFolder?.uri);
@@ -197,8 +233,6 @@ async function enterLocatingFragmentsLsp(): Promise<void> {
     resolvedBinaryPath = path.join(path.dirname(environmentPath.path), "fragments-lsp");
   }
 
-  if (currentState !== "LocatingFragmentsLsp") return;
-
   if (fs.existsSync(resolvedBinaryPath)) {
     await transition("StartingFragmentsLsp", resolvedBinaryPath);
     return;
@@ -211,22 +245,30 @@ async function enterLocatingFragmentsLsp(): Promise<void> {
 }
 
 async function enterFragmentsLspBinaryNotFound(): Promise<void> {
-  const choice = await vscode.window.showWarningMessage(
+  // Not awaited: the prompt can stay open indefinitely and must not keep the state machine busy.
+  void vscode.window.showWarningMessage(
     `Python Fragments: ${statusItem.detail}`,
     "Watch for Installation",
     "Dismiss"
-  );
+  ).then((choice: string | undefined) => {
+    if (choice !== "Watch for Installation") return;
+    // The state machine may have moved on while the prompt was open.
+    if (!restingIn("FragmentsLspBinaryNotFound")) return;
+    watchForInstallation();
+  });
+}
 
-  if (choice !== "Watch for Installation") return;
-
+function watchForInstallation(): void {
   const directory = path.dirname(resolvedBinaryPath);
   if (!fs.existsSync(directory)) return;
 
+  serverWatcher?.close();
   serverWatcher = fs.watch(directory, () => {
     if (!fs.existsSync(resolvedBinaryPath)) return;
+    if (!restingIn("FragmentsLspBinaryNotFound")) return;
     serverWatcher?.close();
     serverWatcher = undefined;
-    transition("StartingFragmentsLsp", resolvedBinaryPath);
+    void runStateMachine("StartingFragmentsLsp", resolvedBinaryPath);
   });
 }
 
@@ -253,24 +295,21 @@ async function enterStartingFragmentsLsp(): Promise<void> {
   try {
     await client.start();
   } catch (error: unknown) {
-    if (currentState !== "StartingFragmentsLsp") return;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    client = undefined;
+    // Keep the client: FragmentsLspFailed stops it, which also terminates the server process if it is still alive.
     await transition("FragmentsLspFailed", errorMessage);
     return;
   }
 
-  if (currentState !== "StartingFragmentsLsp") return;
   await transition("FragmentsLspRunning");
 }
 
 async function enterFragmentsLspRunning(): Promise<void> {
   if (!client) return;
-  clientStateListener = client.onDidChangeState((event) => {
-    if (currentState !== "FragmentsLspRunning") return;
-    if (event.newState === ClientState.Stopped) {
-      transition("FragmentsLspFailed", "The server process exited unexpectedly.");
-    }
+  clientStateListener = client.onDidChangeState((event: StateChangeEvent) => {
+    if (event.newState !== ClientState.Stopped) return;
+    if (!restingIn("FragmentsLspRunning")) return;
+    void runStateMachine("FragmentsLspFailed", "The server process exited unexpectedly.");
   });
 }
 
@@ -300,13 +339,14 @@ async function enterFragmentsLspFailed(): Promise<void> {
     client = undefined;
   }
 
-  const choice = await vscode.window.showErrorMessage(
+  // Not awaited: the prompt can stay open indefinitely and must not keep the state machine busy.
+  void vscode.window.showErrorMessage(
     `Python Fragments LSP failed: ${statusItem.detail}`,
     "Restart"
-  );
-  if (choice === "Restart") {
-    await transition("CheckingExtensionConflicts");
-  }
+  ).then((choice: string | undefined) => {
+    if (choice !== "Restart") return;
+    requestRestart();
+  });
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -315,53 +355,39 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     statusItem,
-    vscode.commands.registerCommand("fragments.restartLanguageServer", () => {
-      if (currentState === "FragmentsLspRunning" || currentState === "StartingFragmentsLsp") {
-        transition("RestartingFragmentsLsp");
-      } else {
-        transition("CheckingExtensionConflicts");
-      }
-    }),
+    vscode.commands.registerCommand("fragments.restartLanguageServer", requestRestart),
     vscode.commands.registerCommand("fragments.resolveConflict", resolveConflict),
     vscode.commands.registerCommand("fragments.showInstallationInstructions", () => {
       vscode.window.showInformationMessage(
         "Run `pip install python-fragments[lsp]` in your active Python environment to install the Fragments language server."
       );
     }),
-    vscode.workspace.onDidChangeConfiguration((event) => {
+    vscode.workspace.onDidChangeConfiguration((event: vscode.ConfigurationChangeEvent) => {
       if (event.affectsConfiguration("fragments.serverPath")) {
-        if (currentState === "FragmentsLspRunning" || currentState === "StartingFragmentsLsp") {
-          transition("RestartingFragmentsLsp");
-        } else {
-          transition("LocatingFragmentsLsp");
-        }
+        requestRestart();
         return;
       }
-      if (event.affectsConfiguration("python.languageServer") && currentState === "LspConflictDetected") {
-        transition("CheckingExtensionConflicts");
-      }
+      if (!event.affectsConfiguration("python.languageServer")) return;
+      if (!restingIn("LspConflictDetected")) return;
+      void runStateMachine("CheckingExtensionConflicts");
     })
   );
 
-  PythonExtension.api().then((api) => {
+  PythonExtension.api().then((api: PythonExtension) => {
     pythonApi = api;
     context.subscriptions.push(
       api.environments.onDidChangeActiveEnvironmentPath(() => {
         if (vscode.workspace.getConfiguration("fragments").get<string>("serverPath")) return;
-        if (currentState === "FragmentsLspRunning" || currentState === "StartingFragmentsLsp") {
-          transition("RestartingFragmentsLsp");
-          return;
-        }
-        if (currentState === "FragmentsLspBinaryNotFound" || currentState === "LocatingFragmentsLsp") {
-          transition("LocatingFragmentsLsp");
-        }
+        // These states wait for the user, and a new interpreter does not resolve them.
+        if (currentState === "LspConflictDetected" || currentState === "FragmentsLspFailed") return;
+        requestRestart();
       })
     );
   }).catch(() => {
     // Python extension unavailable — fragments.serverPath override may still work.
   });
 
-  transition("CheckingExtensionConflicts");
+  void runStateMachine("CheckingExtensionConflicts");
 }
 
 export function deactivate(): Thenable<void> | undefined {
