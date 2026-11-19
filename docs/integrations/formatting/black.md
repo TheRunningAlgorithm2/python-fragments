@@ -139,7 +139,7 @@ Run Black on every commit with [pre-commit](https://pre-commit.com/).
     ``` yaml
     repos:
       - repo: https://github.com/TheRunningAlgorithm2/python-fragments
-        rev: v0.37
+        rev: v0.38
         hooks:
           - id: fragments-black
     ```
