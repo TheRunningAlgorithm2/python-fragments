@@ -2,15 +2,35 @@
 
 ## Install the package
 
-```bash
+``` bash
 pip install python-fragments
+```
+
+### Optional Extras
+
+To install the language server:
+
+``` bash
+pip install python-fragments[lsp]
+```
+
+To install the code formatter:
+
+``` bash
+pip install python-fragments[formatter]
+```
+
+To install the development and documentation dependencies:
+
+``` bash
+pip install python-fragments[dev,docs]
 ```
 
 ## Register the loader
 
 Add this import at your application's entry point, before any modules that contain fragments are imported:
 
-```python
+``` python
 from fragments import loader
 from my_components import fragment_component
 ```
