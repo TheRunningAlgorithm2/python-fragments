@@ -4,6 +4,8 @@ from fragments.ast_nodes import ASTModule, ASTPython
 from lsprotocol.types import Position, Range
 from fragments import grammar
 from fragments.source import Source
+from fragments.source_map import SourceMap
+from fragments.transpiled_code_writer import TranspiledCodeWriter
 
 
 def _line_starts(text: str) -> list[int]:
@@ -28,6 +30,7 @@ class FileState:
     original: str
     transpiled: str = field(init=False)
     ast_module: ASTModule = field(init=False)
+    source_map: SourceMap = field(init=False)
     vanilla: bool = field(init=False)
     original_line_starts: list[int] = field(init=False)
     transpiled_line_starts: list[int] = field(init=False)
@@ -35,8 +38,10 @@ class FileState:
     def __post_init__(self) -> None:
         source = Source.from_string(self.original)
         _, self.ast_module = grammar.expect_module(source)
-        self.ast_module.transpile()
-        self.transpiled = self.ast_module.transpiled_content
+        writer = TranspiledCodeWriter(self.original)
+        self.ast_module.transpile(writer)
+        self.transpiled = writer.transpiled_content()
+        self.source_map = writer.source_map()
         self.vanilla = len(self.ast_module.children) == 1 and isinstance(self.ast_module.children[0], ASTPython)
         self.original_line_starts = _line_starts(self.original)
         self.transpiled_line_starts = _line_starts(self.transpiled)
@@ -44,7 +49,7 @@ class FileState:
     def map_position(self, original_position: Position) -> Position | None:
         """Convert a position to its post-transpilation equivalent."""
         original_offset = _position_to_offset(original_position, self.original_line_starts)
-        mapped_offset = self.ast_module.map_offset(original_offset)
+        mapped_offset = self.source_map.map_offset(original_offset)
         if mapped_offset is None:
             return None
         return _offset_to_position(mapped_offset, self.transpiled_line_starts)
@@ -52,7 +57,7 @@ class FileState:
     def unmap_position(self, mapped_position: Position) -> Position | None:
         """Convert a post-transpilation position back to an original source position."""
         mapped_offset = _position_to_offset(mapped_position, self.transpiled_line_starts)
-        original_offset = self.ast_module.unmap_offset(mapped_offset)
+        original_offset = self.source_map.unmap_offset(mapped_offset)
         if original_offset is None:
             return None
         return _offset_to_position(original_offset, self.original_line_starts)

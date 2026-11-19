@@ -18,20 +18,30 @@ async def semantic_tokens_full(message: REQUESTS | NOTIFICATIONS) -> None:
         return
 
     raw_data = response.result.data
-    output: list[int] = []
-    transpiled_line = transpiled_character = previous_line = previous_character = 0
+    # Unmap every token to an absolute source position first. The transpiler does not always emit code in source order
+    # (e.g. `if` / `for` expressions come after the element body), so the unmapped tokens must be re-sorted before
+    # being delta-encoded - the LSP spec requires tokens in document order with unsigned deltas.
+    unmapped: list[tuple[int, int, int, int, int]] = []
+    transpiled_line = transpiled_character = 0
     for i in range(0, len(raw_data), 5):
         delta_line, delta_character, length, token_type, token_modifiers = raw_data[i : i + 5]
         transpiled_line += delta_line
-        transpiled_character = delta_character if delta_line > 0 else transpiled_character + delta_character
+        transpiled_character = delta_character if delta_line != 0 else transpiled_character + delta_character
         if transpiled_line >= len(file_state.transpiled_line_starts):
             continue
         original_position = file_state.unmap_position(types.Position(line=transpiled_line, character=transpiled_character))
         if original_position is None:
             continue
-        line, character = original_position.line, original_position.character
+        unmapped.append((original_position.line, original_position.character, length, token_type, token_modifiers))
+
+    unmapped.sort(key=lambda token: (token[0], token[1]))
+
+    output: list[int] = []
+    previous_line = previous_character = 0
+    for line, character, length, token_type, token_modifiers in unmapped:
         delta_line = line - previous_line
-        output.extend([delta_line, character if delta_line > 0 else character - previous_character, length, token_type, token_modifiers])
+        delta_character = character if delta_line != 0 else character - previous_character
+        output.extend([delta_line, delta_character, length, token_type, token_modifiers])
         previous_line, previous_character = line, character
 
     response.result.data = output

@@ -303,11 +303,12 @@ def expect_interpolation(source: Source) -> tuple[Source, ASTInterpolation]:
     INTERPOLATION_EXPRESSION = r"([\s\S]*?)(?=\s*}})"
     source_start = source.offset
     source = expect_string(source, "{{")
-    source, leading_whitespace = source.eat_whitespace()
+    source, _ = source.eat_whitespace()
+    expression_start = source.offset
     source, expression = expect_regex(source, INTERPOLATION_EXPRESSION, "expression")
-    source, trailing_whitespace = source.eat_whitespace()
+    source, _ = source.eat_whitespace()
     source = expect_string(source, "}}")
-    return source, ASTInterpolation(source_start, source.offset, expression, len(leading_whitespace), len(trailing_whitespace))
+    return source, ASTInterpolation(source_start, source.offset, expression_start, expression)
 
 
 def expect_html_text(source: Source) -> tuple[Source, ASTHTMLText]:

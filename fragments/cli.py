@@ -44,7 +44,6 @@ def ast(args: argparse.Namespace) -> None:
 
     source = Source.from_string(source_string)
     _, module_ast = grammar.expect_module(source)
-    module_ast.transpile()
     print(module_ast)
 
 

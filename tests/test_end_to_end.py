@@ -1,14 +1,10 @@
-from fragments.grammar import expect_module
-from fragments.source import Source
+from fragments.transpiler import transpile
 
 
 def render(source_str: str, **variables: object) -> str:
     """Transpile a fragment source string, execute it, and return the result."""
-    source = Source.from_string(f"result = {source_str.strip()}")
-    _, module = expect_module(source)
-    module.transpile(0)
     namespace: dict[str, object] = dict(variables)
-    exec(module.transpiled_content, namespace)
+    exec(transpile(f"result = {source_str.strip()}"), namespace)
     return str(namespace["result"])
 
 

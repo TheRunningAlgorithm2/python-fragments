@@ -33,7 +33,7 @@ app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return f"<h1>"+"Hello, world!"+"</h1>"+f"<p>"+"Welcome to Fragments."+"</p>"
+    return ""+f"<h1>"+"Hello, world!"+"</h1>"+f"<p>"+"Welcome to Fragments."+"</p>"
 ```
 
 **Endpoint return value** — a plain Python string:
@@ -45,7 +45,7 @@ async def index() -> str:
 The transpiler does two things:
 
 1. Prepends `from fragments.html.elements import attribute_to_string, comment` at the top of the file.
-2. Replaces every `<> ... </>` block with its children joined by `+`.
+2. Replaces every `<> ... </>` block with an empty string `""` followed by its children joined by `+`. Interpolated values are wrapped in `str(...)` so any type can be concatenated.
 
 ## Dynamic content — `for` and `if`
 
@@ -72,7 +72,7 @@ async def post_list() -> str:
 @app.get("/posts", response_class=HTMLResponse)
 async def post_list() -> str:
     posts = get_posts()
-    return f"<h1>"+"Posts"+"</h1>"+''.join(str(f"<article>"+f"<h2>"+post.title+"</h2>"+f"<p>"+post.summary+"</p>"+"</article>") for post in posts)
+    return ""+f"<h1>"+"Posts"+"</h1>"+''.join(str(f"<article>"+f"<h2>"+str(post.title)+"</h2>"+f"<p>"+str(post.summary)+"</p>"+"</article>") for post in posts)
 ```
 
 **Result** (with two posts in the list):
@@ -103,7 +103,7 @@ return <>
 **After:**
 
 ```python
-return Layout(children=""+f"<h1>"+"Posts"+"</h1>"+''.join(str(PostCard(post=post)) for post in posts),title="My Blog")
+return ""+Layout(children=""+f"<h1>"+"Posts"+"</h1>"+''.join(str(PostCard(post=post,)) for post in posts),title="My Blog",)
 ```
 
 `Layout` and `PostCard` are ordinary Python functions. The transpiler passes children as a keyword argument named `children` (a pre-joined string) and tag attributes as additional keyword arguments. Self-closing components receive no `children` argument at all. How kwargs are received is up to the component:
