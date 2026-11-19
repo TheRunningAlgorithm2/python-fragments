@@ -1,7 +1,7 @@
-- id: fragments-format
-  name: fragments format
+- id: fragments-black
+  name: fragments black
   description: Format the Python surrounding fragments with Black, leaving fragments untouched
-  entry: fragments format
+  entry: fragments black
   language: python
   types: [python]
-  additional_dependencies: ["python-fragments[format]"]
+  additional_dependencies: ["python-fragments[black]"]

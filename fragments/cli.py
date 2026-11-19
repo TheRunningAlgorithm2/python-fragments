@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import cast
 
 from fragments import grammar, transpiler
 from fragments.source import Source
@@ -15,25 +16,18 @@ def parse_args() -> argparse.Namespace:
     ast_parser = command_parser.add_parser("ast")
     ast_parser.add_argument("--input", type=str, required=True)
     ast_parser.set_defaults(func=ast)
-    format_parser = command_parser.add_parser("format")
-    format_parser.add_argument(
-        "paths",
-        nargs="*",
-        help="Files or directories to format (directories are searched like Black does, honouring [tool.black] excludes)",
+    black_parser = command_parser.add_parser(
+        "black",
+        add_help=False,
+        help="Format the Python surrounding fragments with Black; accepts Black's command line options",
+        description="Arguments are passed to Black's internal parser; run `fragments black --help` for its options.",
     )
-    format_parser.add_argument("--input", action="append", default=[], help="Same as a positional path")
-    format_parser.add_argument(
-        "--check",
-        action="store_true",
-        help="Don't write; exit 1 if any file would change",
-    )
-    format_parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Print the formatted source without writing any files",
-    )
-    format_parser.set_defaults(func=format)
-    return parser.parse_args()
+    black_parser.set_defaults(func=black)
+    arguments, remaining = parser.parse_known_args()
+    if arguments.func is not black and remaining:
+        parser.error(f"unrecognized arguments: {' '.join(remaining)}")
+    arguments.black_arguments = remaining
+    return arguments
 
 
 def transpile(args: argparse.Namespace) -> None:
@@ -71,29 +65,32 @@ def _line_and_column(source: str, offset: int) -> tuple[int, int]:
     return line, column
 
 
-def format(args: argparse.Namespace) -> None:
-    """Format the Python surrounding fragments in the specified files, leaving the fragments untouched."""
+def black(args: argparse.Namespace) -> None:
+    """Format the Python surrounding fragments in the specified files with Black, leaving the fragments untouched."""
     try:
+        import click
+
         from fragments import formatter
     except ModuleNotFoundError as error:
-        if error.name != "black":
+        if error.name not in ("black", "click"):
             raise
         print(
-            "Formatting requires black: pip install python-fragments[format]",
+            "Formatting requires black: pip install python-fragments[black]",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    requested = [Path(path) for path in args.paths + args.input]
-    if not requested:
-        print("fragments format: no files given", file=sys.stderr)
-        sys.exit(2)
-
     try:
-        configuration = formatter.load_configuration(requested)
+        configuration = formatter.load_command_line_configuration(cast(list[str], args.black_arguments))
     except formatter.ConfigurationError as error:
-        print(f"fragments format: {error}", file=sys.stderr)
+        print(f"fragments black: {error}", file=sys.stderr)
         sys.exit(2)
+    except click.exceptions.Exit as exit_request:  # --help or --version, already printed by Black's parser
+        sys.exit(exit_request.exit_code)
+
+    def report(message: str) -> None:
+        if not configuration.quiet:
+            print(message, file=sys.stderr)
 
     failed = False
     for source_path in configuration.sources:
@@ -111,17 +108,16 @@ def format(args: argparse.Namespace) -> None:
             failed = True
             continue
 
-        if args.dry_run:
-            print(formatted, end="")
-            continue
         if formatted == source:
             continue
-        if args.check:
-            print(f"would reformat {path}", file=sys.stderr)
-            failed = True
+        if configuration.diff:
+            print(formatter.diff(source, formatted, str(path)), end="")
+        if configuration.check or configuration.diff:
+            report(f"would reformat {path}")
+            failed = failed or configuration.check
             continue
         source_path.write_text(formatted)
-        print(f"reformatted {path}", file=sys.stderr)
+        report(f"reformatted {path}")
 
     if failed:
         sys.exit(1)

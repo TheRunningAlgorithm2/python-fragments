@@ -61,7 +61,6 @@ nav:
     - Installation: getting-started/installation.md
     - VS Code: getting-started/vs-code.md
     - LSP: getting-started/lsp.md
-    - Pre-commit: getting-started/pre-commit.md
   - Syntax and Usage:
     - Fragments: syntax-and-usage/fragments.md
     - Interpolation: syntax-and-usage/interpolation.md
@@ -69,6 +68,10 @@ nav:
     - Control Flow: syntax-and-usage/control-flow.md
     - Components: syntax-and-usage/components.md
     - Comments: syntax-and-usage/comments.md
+  - Integrations:
+    - Overview: integrations/index.md
+    - Formatting:
+      - Black: integrations/formatting/black.md
   - Transpiler:
     - 1. Transpilation: transpiler/transpilation.md
     - 2. HTML Library: transpiler/html-library.md
