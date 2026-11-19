@@ -15,6 +15,7 @@ from fragments.ast_nodes import (
     ASTHTMLText,
     ASTInterpolation,
     ASTHTMLChild,
+    ASTTemplate,
 )
 from fragments.grammar import ParsingError
 from fragments.source import Source
@@ -411,6 +412,124 @@ def test_children_slot_inside_element():
     element = fragment.children[0]
     assert isinstance(element, ASTHTMLElement)
     assert isinstance(element.children[0], ASTChildrenSlot)
+
+
+# ---------------------------------------------------------------------------
+# Template
+# ---------------------------------------------------------------------------
+
+
+def test_template_bare_parses():
+    source = Source.from_string("<><Template><p>a</p><p>b</p></Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTTemplate(-1, -1, [
+            ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "a")], False),
+            ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "b")], False),
+        ])
+    ])
+
+
+def test_template_empty_parses():
+    source = Source.from_string("<><Template></Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [ASTTemplate(-1, -1, [])])
+
+
+def test_template_with_if():
+    source = Source.from_string("<><Template if={{ condition }}><p>a</p></Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTControlNode(-1, -1,
+            ASTInterpolation(-1, -1, -1, "condition"),
+            None,
+            ASTTemplate(-1, -1, [ASTHTMLElement(-1, -1, "p", {}, [ASTHTMLText(-1, -1, "a")], False)]),
+        )
+    ])
+
+
+def test_template_with_for():
+    source = Source.from_string("<><Template for={{ item in items }}>{{ item }}</Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTControlNode(-1, -1,
+            None,
+            ASTInterpolation(-1, -1, -1, "item in items"),
+            ASTTemplate(-1, -1, [ASTInterpolation(-1, -1, -1, "item")]),
+        )
+    ])
+
+
+def test_template_with_if_and_for():
+    source = Source.from_string("<><Template if={{ item.visible }} for={{ item in items }}>{{ item }}</Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [
+        ASTControlNode(-1, -1,
+            ASTInterpolation(-1, -1, -1, "item.visible"),
+            ASTInterpolation(-1, -1, -1, "item in items"),
+            ASTTemplate(-1, -1, [ASTInterpolation(-1, -1, -1, "item")]),
+        )
+    ])
+
+
+def test_template_whitespace_in_closing_tag():
+    source = Source.from_string("<><Template></ Template ></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert fragment == ASTFragment(-1, -1, [ASTTemplate(-1, -1, [])])
+
+
+def test_template_nested():
+    source = Source.from_string("<><Template if={{ a }}><Template for={{ x in xs }}>{{ x }}</Template></Template></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    outer = fragment.children[0]
+    assert isinstance(outer, ASTControlNode)
+    assert isinstance(outer.child, ASTTemplate)
+    inner = outer.child.children[0]
+    assert isinstance(inner, ASTControlNode)
+    assert isinstance(inner.child, ASTTemplate)
+
+
+def test_template_inside_element():
+    source = Source.from_string("<><ul><Template for={{ x in xs }}><li>{{ x }}</li></Template></ul></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    element = fragment.children[0]
+    assert isinstance(element, ASTHTMLElement)
+    assert isinstance(element.children[0], ASTControlNode)
+
+
+def test_template_prefixed_component_name_is_component():
+    source = Source.from_string("<><TemplateCard /></>")
+    source, fragment = grammar.expect_fragment(source)
+    assert source.at_end()
+    assert isinstance(fragment.children[0], ASTComponent)
+
+
+def test_template_rejects_other_attributes():
+    with pytest.raises(ParsingError, match="only accepts if and for"):
+        grammar.expect_fragment(Source.from_string('<><Template class="x"></Template></>'))
+
+
+def test_template_rejects_string_literal_control_attribute():
+    with pytest.raises(ParsingError, match="must be an interpolation"):
+        grammar.expect_fragment(Source.from_string('<><Template if="condition"></Template></>'))
+
+
+def test_template_rejects_self_closing():
+    with pytest.raises(ParsingError, match="cannot be self-closing"):
+        grammar.expect_fragment(Source.from_string("<><Template if={{ condition }} /></>"))
+
+
+def test_template_mismatched_closing_tag():
+    with pytest.raises(ParsingError):
+        grammar.expect_fragment(Source.from_string("<><Template></div></>"))
 
 
 # ---------------------------------------------------------------------------

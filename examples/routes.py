@@ -26,6 +26,7 @@ def PostCard(children: Children, post: Post) -> str:
         <div>
             <h2>{{ post.title }}</h2>
             <p>{{ post.date.strftime("%d-%m-%y") }}</p>
+            <Children... />
         </div>
     </>
 
@@ -37,8 +38,12 @@ async def page() -> str:
     return <>
         <Base title="Test" header="Test Header">
             <p if={{ True }}>Hello</p>
-            <p x-data="{ test: 'a' }">Views: {{ view_counter }}</p>
-            <PostCard for={{ post in POSTS }} post={{ post }} />
-            <Children... />
+            <p x-data={{ { test: "a" } }}>Views: {{ view_counter }}</p>
+            <Template if={{ len(POSTS) > 0 }}>
+                <PostCard for={{ post in POSTS }} post={{ post }} />
+            </Template>
+            <Template if={{ len(POSTS) == 0 }}>
+                <p>There are no posts yet.</p>
+            </Template>
         </Base>
     </>

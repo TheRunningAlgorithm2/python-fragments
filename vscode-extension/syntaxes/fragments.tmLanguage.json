@@ -16,8 +16,10 @@
       "endCaptures": { "0": { "name": "punctuation.definition.tag.fragment" } },
       "patterns": [
         { "include": "#comment" },
+        { "include": "#template-closing-tag" },
         { "include": "#closing-tag" },
         { "include": "#children-slot" },
+        { "include": "#template-open-tag" },
         { "include": "#open-tag" },
         { "include": "#interpolation" }
       ]
@@ -28,6 +30,14 @@
       "end": "-->",
       "beginCaptures": { "0": { "name": "punctuation.definition.comment.html" } },
       "endCaptures": { "0": { "name": "punctuation.definition.comment.html" } }
+    },
+    "template-closing-tag": {
+      "match": "(</)\\s*(Template)\\s*(>)",
+      "captures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "variable.language.template.fragment" },
+        "3": { "name": "punctuation.definition.tag.fragment" }
+      }
     },
     "closing-tag": {
       "match": "(</)([a-zA-Z][a-zA-Z0-9_-]*)(>)",
@@ -41,6 +51,20 @@
       "match": "<Children\\.\\.\\. />",
       "name": "variable.language.children.fragment"
     },
+    "template-open-tag": {
+      "begin": "(<)(Template)(?![a-zA-Z0-9_-])",
+      "end": "\\s*/?>",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.fragment" },
+        "2": { "name": "variable.language.template.fragment" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.tag.fragment" }
+      },
+      "patterns": [
+        { "include": "#tag-attributes" }
+      ]
+    },
     "open-tag": {
       "begin": "(<)([a-zA-Z][a-zA-Z0-9_-]*)",
       "end": "\\s*/?>",
@@ -51,6 +75,11 @@
       "endCaptures": {
         "0": { "name": "punctuation.definition.tag.fragment" }
       },
+      "patterns": [
+        { "include": "#tag-attributes" }
+      ]
+    },
+    "tag-attributes": {
       "patterns": [
         { "include": "#interpolation" },
         {

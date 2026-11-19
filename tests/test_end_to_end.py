@@ -119,6 +119,88 @@ def test_for_loop_empty():
 
 
 # ---------------------------------------------------------------------------
+# Control flow: for with if
+# ---------------------------------------------------------------------------
+
+
+def test_for_with_if_filters_each_item():
+    result = render("<><li for={{ number in numbers }} if={{ number % 2 == 0 }}>{{ number }}</li></>", numbers=[1, 2, 3, 4])
+    assert result == "<li>2</li><li>4</li>"
+
+
+def test_for_with_if_attribute_order_does_not_matter():
+    result = render("<><li if={{ number % 2 == 0 }} for={{ number in numbers }}>{{ number }}</li></>", numbers=[1, 2, 3, 4])
+    assert result == "<li>2</li><li>4</li>"
+
+
+def test_for_with_if_on_component():
+    def Item(value: int) -> str:
+        return f"<b>{value}</b>"
+
+    result = render("<><Item for={{ number in numbers }} if={{ number > 1 }} value={{ number }} /></>", numbers=[1, 2, 3], Item=Item)
+    assert result == "<b>2</b><b>3</b>"
+
+
+def test_if_with_nested_ternary_condition():
+    result = render("<><p if={{ first if use_first else second }}>yes</p></>", use_first=False, first=True, second=False)
+    assert result == ""
+
+
+def test_for_with_if_nested_ternary_condition():
+    result = render("<><li for={{ number in numbers }} if={{ number if use_number else 0 }}>{{ number }}</li></>", numbers=[0, 1, 2], use_number=True)
+    assert result == "<li>1</li><li>2</li>"
+
+
+# ---------------------------------------------------------------------------
+# Template
+# ---------------------------------------------------------------------------
+
+
+def test_template_bare_renders_children():
+    assert render("<><Template><p>a</p><p>b</p></Template></>") == "<p>a</p><p>b</p>"
+
+
+def test_template_empty():
+    assert render("<><p>before</p><Template></Template><p>after</p></>") == "<p>before</p><p>after</p>"
+
+
+def test_template_if_true():
+    assert render("<><Template if={{ condition }}><p>a</p><p>b</p></Template></>", condition=True) == "<p>a</p><p>b</p>"
+
+
+def test_template_if_false():
+    assert render("<><p>before</p><Template if={{ condition }}><p>a</p></Template><p>after</p></>", condition=False) == "<p>before</p><p>after</p>"
+
+
+def test_template_for():
+    result = render("<><dl><Template for={{ key, value in pairs }}><dt>{{ key }}</dt><dd>{{ value }}</dd></Template></dl></>", pairs=[("a", 1), ("b", 2)])
+    assert result == "<dl><dt>a</dt><dd>1</dd><dt>b</dt><dd>2</dd></dl>"
+
+
+def test_template_for_with_if():
+    result = render("<><Template for={{ number in numbers }} if={{ number != 2 }}><i>{{ number }}</i>,</Template></>", numbers=[1, 2, 3])
+    assert result == "<i>1</i>,<i>3</i>,"
+
+
+def test_template_text_and_interpolation_children():
+    assert render("<><Template for={{ name in names }}>Hi {{ name }}. </Template></>", names=["a", "b"]) == "Hi a. Hi b. "
+
+
+def test_template_nested_guard_around_loop():
+    source = "<><Template if={{ show }}><Template for={{ item in items }}><li>{{ item }}</li></Template></Template></>"
+    assert render(source, show=True, items=["x", "y"]) == "<li>x</li><li>y</li>"
+    assert render(source, show=False, items=["x", "y"]) == ""
+
+
+def test_template_inside_component_children():
+    def Wrapper(children: str) -> str:
+        return f"<section>{children}</section>"
+
+    result = render("<><Wrapper><Template for={{ item in items }}><p>{{ item }}</p></Template></Wrapper></>", Wrapper=Wrapper, items=["x", "y"])
+    assert result == "<section><p>x</p><p>y</p></section>"
+
+
+# ---------------------------------------------------------------------------
 # Components
 # ---------------------------------------------------------------------------
 

@@ -2,6 +2,9 @@
 
 Any Python function can be used as a component. Components are distinguished from HTML elements by their name: **an uppercase first letter means a component call**, lowercase means a standard HTML element.
 
+!!! note "`Template` is a reserved name"
+    `<Template>` is a built-in element for [control flow](control-flow.md#template), so a function named `Template` cannot be used as a component. Names that only start with `Template`, such as `TemplateCard`, are unaffected.
+
 ## Defining a component
 
 A component is a plain Python function that returns a fragment. Attributes passed on the tag become keyword arguments — declare them explicitly or accept them all with `**kwargs`:

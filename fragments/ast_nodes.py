@@ -3,7 +3,7 @@ from typing import Sequence
 
 from fragments.transpiled_code_writer import TranspiledCodeWriter
 
-type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode | ASTDoctype | ASTChildrenSlot
+type ASTHTMLChild = ASTHTMLElement | ASTHTMLComment | ASTHTMLText | ASTInterpolation | ASTComponent | ASTControlNode[ASTHTMLElement] | ASTControlNode[ASTComponent] | ASTControlNode[ASTTemplate] | ASTDoctype | ASTChildrenSlot | ASTTemplate
 
 IMPORT_PREFIX = "from fragments.html.elements import attribute_to_string, comment\n"
 IMPORT_PREFIX_LEN = len(IMPORT_PREFIX)
@@ -84,7 +84,7 @@ class ASTHTMLElement:
 
 
 @dataclass(slots=True)
-class ASTControlNode[T: (ASTHTMLElement, ASTComponent)]:
+class ASTControlNode[T: (ASTHTMLElement, ASTComponent, ASTTemplate)]:
     source_start: int = field(compare=False)
     source_end: int = field(compare=False)
 
@@ -93,18 +93,31 @@ class ASTControlNode[T: (ASTHTMLElement, ASTComponent)]:
     child: T
 
     def transpile(self, writer: TranspiledCodeWriter) -> None:
+        """Emit a generator expression for `for` (filtered per item by `if`, if present), or a ternary for a lone `if`.
+
+        The `if` condition is parenthesised because both a comprehension `if` clause and a ternary condition only accept a
+        disjunction, so an unparenthesised nested ternary, lambda or walrus would otherwise be a syntax error.
+        """
         if self.for_interpolation is not None:
             writer.write("''.join(str(")
             self.child.transpile(writer)
             writer.write(") for ")
             self.for_interpolation.transpile(writer)
+            if self.if_interpolation is not None:
+                writer.write(" if (")
+                self.if_interpolation.transpile(writer)
+                writer.write(")")
             writer.write(")")
-        elif self.if_interpolation is not None:
-            writer.write("(")
-            self.child.transpile(writer)
-            writer.write(" if ")
-            self.if_interpolation.transpile(writer)
-            writer.write(" else '')")
+            return
+
+        if self.if_interpolation is None:
+            return
+
+        writer.write("(")
+        self.child.transpile(writer)
+        writer.write(" if (")
+        self.if_interpolation.transpile(writer)
+        writer.write(") else '')")
 
     @classmethod
     def wrap_child(
@@ -118,6 +131,20 @@ class ASTControlNode[T: (ASTHTMLElement, ASTComponent)]:
             return child
 
         return ASTControlNode(child.source_start, child.source_end, if_interpolation, for_interpolation, child)
+
+
+@dataclass(slots=True)
+class ASTTemplate:
+    """The `<Template>` meta element: renders its children with no wrapping element, so it can carry `if` and `for`."""
+
+    source_start: int = field(compare=False)
+    source_end: int = field(compare=False)
+
+    children: Sequence["ASTHTMLChild"]
+
+    def transpile(self, writer: TranspiledCodeWriter) -> None:
+        writer.write('""')
+        transpile_children(self.children, writer)
 
 
 @dataclass(slots=True)

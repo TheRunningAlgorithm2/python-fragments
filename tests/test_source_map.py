@@ -252,6 +252,31 @@ def test_for_interpolation_round_trip():
         assert state.source_map.unmap_offset(t) == expr_start + k
 
 
+@pytest.mark.parametrize("source", [
+    "<><li for={{ item in items }} if={{ item.visible }}>{{ item }}</li></>",
+    "<><li if={{ item.visible }} for={{ item in items }}>{{ item }}</li></>",
+    "<><Template for={{ item in items }} if={{ item.visible }}>{{ item }}</Template></>",
+    "<><Template if={{ item.visible }} for={{ item in items }}>{{ item }}</Template></>",
+])
+def test_combined_for_and_if_interpolations_round_trip(source: str):
+    state = make_state(source)
+    for expression in ("item in items", "item.visible"):
+        expression_start = source.index(expression)
+        for k in range(1, len(expression)):
+            t = state.source_map.map_offset(expression_start + k)
+            assert t is not None, f"offset {expression_start + k} inside {expression!r} should be mappable"
+            assert state.transpiled[t] == expression[k]
+            assert state.source_map.unmap_offset(t) == expression_start + k
+
+
+def test_template_name_not_mappable():
+    source = "<><Template if={{ condition }}>text</Template></>"
+    state = make_state(source)
+    for name_start in (source.index("Template"), source.rindex("Template")):
+        for k in range(len("Template")):
+            assert state.source_map.map_offset(name_start + k) is None
+
+
 # ---------------------------------------------------------------------------
 # Component argument interpolation mapping
 # ---------------------------------------------------------------------------

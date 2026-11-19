@@ -17,12 +17,15 @@ from fragments.ast_nodes import (
     ASTModule,
     ASTPython,
     ASTHTMLChild,
+    ASTTemplate,
 )
 from fragments.source import Source
 
 HTML_IDENTIFIER = r"[a-zA-Z][a-zA-Z0-9_:.-]*"
 HTML_ATTRIBUTE_NAME = r"[a-zA-Z:-_][a-zA-Z0-9_:.-]*"
 HTML_TEXT = r"([\s\S]*?)(?=<|{{)"
+TEMPLATE_OPENING = r"<Template(?![a-zA-Z0-9_])"
+TEMPLATE_ATTRIBUTES = ("if", "for")
 
 
 class ParsingError(Exception):
@@ -138,6 +141,10 @@ def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
         source, children_slot = expect_children_slot(source)
         return source, children_slot
 
+    if source.start_matches(TEMPLATE_OPENING):
+        source, template = expect_template(source)
+        return source, template
+
     if source.start_matches(r"<[A-Z]"):
         source, component = expect_component(source)
         return source, component
@@ -152,6 +159,48 @@ def expect_child(source: Source) -> tuple[Source, ASTHTMLChild]:
 
     source, html_text = expect_html_text(source)
     return source, html_text
+
+
+def expect_template(source: Source) -> tuple[Source, ASTTemplate | ASTControlNode[ASTTemplate]]:
+    """The `<Template>` meta element, which only exists to carry `if` and `for` without rendering a wrapping element."""
+    source_start = source.offset
+    source, _ = expect_regex(source, TEMPLATE_OPENING, "<Template")
+    source, _ = source.eat_whitespace()
+
+    attributes: dict[str, ASTInterpolation] = {}
+    while not source.starts_with(">") and not source.starts_with("/>"):
+        attribute_source_start = source.offset
+        source, attribute_name = expect_regex(source, HTML_ATTRIBUTE_NAME, "attribute name")
+        if attribute_name not in TEMPLATE_ATTRIBUTES:
+            raise ParsingError(f"<Template> only accepts if and for attributes, found {attribute_name!r}", attribute_source_start)
+        source = expect_string(source, "=")
+        if not source.starts_with("{{"):
+            raise ParsingError(f"<Template> attribute {attribute_name!r} must be an interpolation", source.offset)
+        source, interpolation = expect_interpolation(source)
+        attributes[attribute_name] = interpolation
+        source, _ = source.eat_whitespace()
+
+    if source.starts_with("/>"):
+        raise ParsingError("<Template> cannot be self-closing", source.offset)
+
+    source = expect_string(source, ">")
+    source, children = expect_children(source)
+    closing_source_start = source.offset
+    source = expect_string(source, "</")
+    source, _ = source.eat_whitespace()
+    source, closing_name = expect_regex(source, HTML_IDENTIFIER, "element name")
+
+    if closing_name != "Template":
+        raise ParsingError(f"Element closed ({closing_name!r}) is not the same as currently opened element ('Template')", closing_source_start)
+
+    source, _ = source.eat_whitespace()
+    source = expect_string(source, ">")
+
+    return source, ASTControlNode[ASTTemplate].wrap_child(
+        ASTTemplate(source_start, source.offset, children),
+        attributes.get("if"),
+        attributes.get("for"),
+    )
 
 
 def expect_component(source: Source) -> tuple[Source, ASTComponent | ASTControlNode[ASTComponent]]:

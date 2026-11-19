@@ -83,7 +83,25 @@ async def post_list() -> str:
 
 The `for={{ post in posts }}` attribute is stripped from the element and becomes the `for post in posts` clause of a generator expression. `''.join(str(...) for post in posts)` then joins the resulting rendered articles into a flat string.
 
-Similarly, `if={{ condition }}` compiles to a Python ternary: `(element if condition else '')`.
+Similarly, `if={{ condition }}` on its own compiles to a Python ternary: `(element if (condition) else '')`.
+
+When `for` and `if` appear on the same element, the `if` becomes the filter clause of the generator expression, so it is evaluated once per item and can refer to the loop variable:
+
+```python
+# <article for={{ post in posts }} if={{ post.published }}>...</article>
+''.join(str(f"<article>"+...+"</article>") for post in posts if (post.published))
+```
+
+The condition is always wrapped in parentheses, so conditions such as `a if b else c` are valid in both forms.
+
+## `<Template>`
+
+`<Template>` produces no tags of its own. It compiles to its children joined onto an empty string, the same as a fragment, and its `for` and `if` attributes are applied to that string:
+
+```python
+# <Template for={{ post in posts }}><h2>{{ post.title }}</h2><p>{{ post.summary }}</p></Template>
+''.join(str(""+f"<h2>"+str(post.title)+"</h2>"+f"<p>"+str(post.summary)+"</p>") for post in posts)
+```
 
 ## Components — uppercase tags
 

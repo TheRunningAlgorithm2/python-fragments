@@ -35,6 +35,44 @@ return <>
 </li>
 ```
 
+When combined, `if` filters each item, reading like `for post in posts if post.published`. It is evaluated once per item and can refer to the loop variable. The order of the two attributes does not matter.
+
+## Template
+
+Use `<Template>` to apply `if` or `for` to a group of elements without wrapping them in an extra element. `<Template>` renders only its children:
+
+```python
+return <>
+    <dl>
+        <Template for={{ term in glossary }}>
+            <dt>{{ term.name }}</dt>
+            <dd>{{ term.definition }}</dd>
+        </Template>
+    </dl>
+</>
+```
+
+`if` and `for` work on `<Template>` exactly as they do on elements, including when combined:
+
+```python
+<Template for={{ post in posts }} if={{ post.published }}>
+    <h2>{{ post.title }}</h2>
+    <p>{{ post.summary }}</p>
+</Template>
+```
+
+To check a condition once for a whole loop, rather than once per item, nest two templates:
+
+```python
+<Template if={{ user.is_admin }}>
+    <Template for={{ report in reports }}>
+        <ReportRow report={{ report }} />
+    </Template>
+</Template>
+```
+
+`<Template>` only accepts `if` and `for` attributes, and both must be interpolations. It cannot be self-closing. A `<Template>` with no attributes is allowed and simply renders its children.
+
 ## Components
 
 `if` and `for` work on component tags too:
