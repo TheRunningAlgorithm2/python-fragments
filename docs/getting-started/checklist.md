@@ -5,5 +5,6 @@
 - [ ] Install the [VS Code extension](vs-code.md) or [LSP](lsp.md)
 - [ ] Import with `from fragments import loader`
 - [ ] Start writing `<>fragments</>` in your project
+- [ ] Optionally, set up [code formatting with Black](../integrations/formatting/black.md)
 
 That's it, ready for production.

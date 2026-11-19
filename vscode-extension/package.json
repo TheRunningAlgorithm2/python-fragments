@@ -59,6 +59,12 @@
         "fragments.serverPath": {
           "type": "string",
           "description": "Override path to the fragments-lsp executable. By default, derived from the active Python interpreter selected in the Python extension."
+        },
+        "fragments.blackArgs": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "Extra [Black command line options](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#command-line-options) used when formatting, e.g. `-l 100 --preview`. Applied on top of `[tool.black]` in `pyproject.toml`, exactly as `fragments black` applies them. See [supported options](https://python-fragments.io/integrations/formatting/black/#options)."
         }
       }
     }

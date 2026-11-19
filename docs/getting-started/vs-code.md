@@ -14,6 +14,16 @@ If a conflicting Python language server (such as Pylance) is active, the extensi
 
 ### Building from source
 
+Bump the package version if needed:
+
+``` bash
+cd vscode-extension
+npm version patch --no-git-tag-version # for a patch update
+npm version minor --no-git-tag-version # for a minor update
+npm version major --no-git-tag-version # for a major update
+cd ..
+```
+
 To build and install the extension manually:
 
 ``` bash
@@ -26,21 +36,11 @@ code --install-extension <filename>.vsix
 
 ## Configuration
 
-| Setting                | Default                             | Description                                                                           |
-| ---------------------- | ----------------------------------- | ------------------------------------------------------------------------------------- |
-| `fragments.serverPath` | _(derived from active interpreter)_ | Override path to the `fragments-lsp` executable. Only needed if auto-detection fails. |
+| Setting                | Default                             | Description                                                                                                       |
+| ---------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `fragments.serverPath` | _(derived from active interpreter)_ | Override path to the `fragments-lsp` executable. Only needed if auto-detection fails.                             |
+| `fragments.blackArgs`  | `""`                                | Extra [Black options](../integrations/formatting/black.md#editors) used when formatting, e.g. `-l 100 --preview`. |
 
-## Format on save
+## Formatting
 
-Install `python-fragments[lsp,format]`, then make Python Fragments the formatter for Python files:
-
-``` json
-{
-  "[python]": {
-    "editor.defaultFormatter": "tra-technologies-ltd.python-fragments",
-    "editor.formatOnSave": true
-  }
-}
-```
-
-Formatting uses the `[tool.black]` settings from your project's `pyproject.toml`. After changing `[tool.black]`, run **Python Fragments: Restart Server** for the change to apply.
+Format on save is supported with the [Black integration](../integrations/formatting/black.md#vs-code).

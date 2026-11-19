@@ -1,4 +1,4 @@
-# Deliberately unformatted: run `fragments format --input examples/formatting.py`
+# Deliberately unformatted: run `fragments black --diff examples/formatting.py`
 # to see Black tidy the Python while leaving every fragment exactly as written.
 import os,sys
 from typing import   Optional

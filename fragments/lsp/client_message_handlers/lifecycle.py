@@ -38,7 +38,7 @@ async def initialize(message: REQUESTS | NOTIFICATIONS) -> None:
     pyright_response = cast(types.InitializeResponse, await based_proxy.pyright().request(request))
     assert pyright_response.result is not None
     pyright_response.result.capabilities.text_document_sync = types.TextDocumentSyncKind.Full
-    # Formatting is only offered when the optional `format` extra (black) is installed.
+    # Formatting is only offered when the optional `black` extra is installed.
     pyright_response.result.capabilities.document_formatting_provider = importlib.util.find_spec("black") is not None
     based_proxy.proxy().respond(original_id, pyright_response)
 

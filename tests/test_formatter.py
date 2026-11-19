@@ -12,7 +12,12 @@ import black  # noqa: E402
 from black.mode import TargetVersion  # noqa: E402
 
 import fragments  # noqa: E402
-from fragments.formatter import ConfigurationError, format_source, load_configuration  # noqa: E402
+from fragments.formatter import (  # noqa: E402
+    ConfigurationError,
+    format_source,
+    load_configuration,
+    split_black_arguments,
+)
 from fragments.transpiler import transpile  # noqa: E402
 
 if TYPE_CHECKING:
@@ -160,6 +165,99 @@ def test_load_configuration_rejects_missing_paths(tmp_path: Path) -> None:
         load_configuration([tmp_path / "missing.py"])
 
 
+def test_black_arguments_override_tool_black(tmp_path: Path) -> None:
+    path = write_config(tmp_path, "[tool.black]\nline-length = 60\nskip-string-normalization = true\n")
+    path.touch()
+    configuration = load_configuration([path], ["-l", "100", "--preview", "--check", "--diff", "-q"])
+    assert configuration.mode.line_length == 100
+    assert configuration.mode.string_normalization is False
+    assert configuration.mode.preview is True
+    assert (configuration.check, configuration.diff, configuration.quiet) == (True, True, True)
+
+
+def test_black_arguments_default_output_options(tmp_path: Path) -> None:
+    path = tmp_path / "a.py"
+    path.touch()
+    configuration = load_configuration([path])
+    assert (configuration.check, configuration.diff, configuration.quiet) == (False, False, False)
+
+
+def test_black_arguments_apply_without_paths() -> None:
+    assert load_configuration([], ["-l", "40"]).mode.line_length == 40
+
+
+@pytest.mark.parametrize(
+    ("arguments", "option"),
+    [
+        (["--code", "x = 1"], "--code"),
+        (["-c", "x = 1"], "--code"),
+        (["--pyi"], "--pyi"),
+        (["--ipynb"], "--ipynb"),
+        (["--python-cell-magics", "custom"], "--python-cell-magics"),
+        (["-x"], "--skip-source-first-line"),
+        (["--line-ranges", "1-2"], "--line-ranges"),
+        (["--stdin-filename", "a.py"], "--stdin-filename"),
+    ],
+)
+def test_black_arguments_reject_unsupported_options(tmp_path: Path, arguments: list[str], option: str) -> None:
+    path = tmp_path / "a.py"
+    path.touch()
+    with pytest.raises(ConfigurationError, match=option):
+        load_configuration([path], arguments)
+
+
+@pytest.mark.parametrize("option", ["-h", "--help", "--version"])
+def test_black_arguments_reject_exiting_options(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], option: str
+) -> None:
+    """These would print to stdout, which is the LSP channel, so they must be rejected before Black sees them."""
+    path = tmp_path / "a.py"
+    path.touch()
+    with pytest.raises(ConfigurationError, match=option):
+        load_configuration([path], [option])
+    assert capsys.readouterr().out == ""
+
+
+def test_black_arguments_reject_paths(tmp_path: Path) -> None:
+    path, other = tmp_path / "a.py", tmp_path / "b.py"
+    path.touch()
+    other.touch()
+    with pytest.raises(ConfigurationError, match="must not contain paths"):
+        load_configuration([path], ["-l", "100", str(other)])
+
+
+def test_black_arguments_reject_invalid_values(tmp_path: Path) -> None:
+    path = tmp_path / "a.py"
+    path.touch()
+    with pytest.raises(ConfigurationError, match="line-length"):
+        load_configuration([path], ["-l", "wide"])
+
+
+def test_black_arguments_accept_ignored_options(tmp_path: Path) -> None:
+    path = tmp_path / "a.py"
+    path.touch()
+    arguments = ["--fast", "-W", "2", "--color", "-v", "--required-version", "26", "--no-cache"]
+    assert load_configuration([path], arguments).sources == [path]
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("", []),
+        ("   ", []),
+        ("-l 100 --preview", ["-l", "100", "--preview"]),
+        ("--extend-exclude '^/generated dir/'", ["--extend-exclude", "^/generated dir/"]),
+    ],
+)
+def test_split_black_arguments(text: str, expected: list[str]) -> None:
+    assert split_black_arguments(text) == expected
+
+
+def test_split_black_arguments_rejects_unclosed_quote() -> None:
+    with pytest.raises(ConfigurationError, match="could not parse"):
+        split_black_arguments("--exclude 'oops")
+
+
 def make_project(directory: Path, config: str, files: list[str]) -> None:
     """Create a project root with `config` as its `[tool.black]` table and an empty file at each of `files`."""
     (directory / "pyproject.toml").write_text(f"[tool.black]\n{config}\n")
@@ -261,11 +359,38 @@ def test_formatting_edits_raises_on_invalid_config(tmp_path: Path) -> None:
         formatting_edits("x = 1\n", path)
 
 
+def test_formatting_edits_applies_black_arguments(tmp_path: Path) -> None:
+    from fragments.lsp.client_message_handlers.formatting import formatting_edits
+
+    path = tmp_path / "a.py"
+    path.touch()
+    (edit,) = formatting_edits("x = {'a':1}\n", path, "-S --check --diff -q")
+    assert edit.new_text == "x = {'a': 1}\n"
+
+
+def test_formatting_edits_applies_black_arguments_without_path() -> None:
+    from fragments.lsp.client_message_handlers.formatting import formatting_edits
+
+    (edit,) = formatting_edits("x = {'a':1}\n", None, "-S")
+    assert edit.new_text == "x = {'a': 1}\n"
+
+
+@pytest.mark.parametrize("setting", ["--pyi", "--help", "{other}", "--exclude 'oops"])
+def test_formatting_edits_raises_on_invalid_black_arguments(tmp_path: Path, setting: str) -> None:
+    from fragments.lsp.client_message_handlers.formatting import formatting_edits
+
+    path, other = tmp_path / "a.py", tmp_path / "other.py"
+    path.touch()
+    other.touch()
+    with pytest.raises(ConfigurationError):
+        formatting_edits("x = 1\n", path, setting.format(other=other))
+
+
 def test_formatting_edits_reports_missing_black(monkeypatch: pytest.MonkeyPatch) -> None:
     from fragments.lsp.client_message_handlers.formatting import formatting_edits
 
     hide_black(monkeypatch)
-    with pytest.raises(RuntimeError, match=r"python-fragments\[format\]"):
+    with pytest.raises(RuntimeError, match=r"python-fragments\[black\]"):
         formatting_edits("x = 1\n", None)
 
 
@@ -286,9 +411,15 @@ def test_uri_to_path(uri: str, expected: Path | None) -> None:
 def run_formatting_handler(
     monkeypatch: pytest.MonkeyPatch,
     uri: str,
-    replacement: Callable[[str, Path | None], list["types.TextEdit"]],
+    replacement: Callable[[str, Path | None, str], list["types.TextEdit"]],
+    setting: "types.LSPAny" = "",
+    configuration_requests: list["types.ConfigurationRequest"] | None = None,
 ) -> list["types.ResponseErrorMessage | types.DocumentFormattingResponse"]:
-    """Send a formatting request for `uri` through the handler, with `formatting_edits` replaced, and return the responses."""
+    """Send a formatting request for `uri` through the handler, with `formatting_edits` replaced, and return the responses.
+
+    The editor answers the handler's `workspace/configuration` request with `setting`, and each such request is
+    appended to `configuration_requests` when given.
+    """
     from lsprotocol import types
 
     from fragments.lsp import based_proxy
@@ -305,6 +436,11 @@ def run_formatting_handler(
             response: types.ResponseErrorMessage | types.DocumentFormattingResponse,
         ) -> None:
             self.responses.append(response)
+
+        async def request(self, message: types.ConfigurationRequest) -> types.ConfigurationResponse:
+            if configuration_requests is not None:
+                configuration_requests.append(message)
+            return types.ConfigurationResponse(id=message.id, result=[setting])
 
     proxy = RecordingProxy()
     monkeypatch.setattr(based_proxy, "_PROXY", proxy)
@@ -327,7 +463,7 @@ def test_formatting_handler_responds_with_error_when_formatting_fails(
 ) -> None:
     from lsprotocol import types
 
-    def fail(original: str, path: Path | None = None) -> list[types.TextEdit]:
+    def fail(original: str, path: Path | None = None, black_arguments: str = "") -> list[types.TextEdit]:
         raise RuntimeError("Formatting requires black")
 
     (response,) = run_formatting_handler(monkeypatch, "file:///t.py", fail)
@@ -341,7 +477,7 @@ def test_formatting_handler_passes_file_path(monkeypatch: pytest.MonkeyPatch) ->
 
     received: list[Path | None] = []
 
-    def record(original: str, path: Path | None = None) -> list[types.TextEdit]:
+    def record(original: str, path: Path | None = None, black_arguments: str = "") -> list[types.TextEdit]:
         received.append(path)
         return []
 
@@ -356,9 +492,51 @@ def test_formatting_handler_passes_no_path_for_untitled_documents(
 
     received: list[Path | None] = []
 
-    def record(original: str, path: Path | None = None) -> list[types.TextEdit]:
+    def record(original: str, path: Path | None = None, black_arguments: str = "") -> list[types.TextEdit]:
         received.append(path)
         return []
 
     run_formatting_handler(monkeypatch, "untitled:Untitled-1", record)
     assert received == [None]
+
+
+@pytest.mark.parametrize(("setting", "expected"), [("-l 100", "-l 100"), (None, ""), (42, "")])
+def test_formatting_handler_passes_black_arguments_setting(
+    monkeypatch: pytest.MonkeyPatch, setting: "types.LSPAny", expected: str
+) -> None:
+    from lsprotocol import types
+
+    received: list[str] = []
+
+    def record(original: str, path: Path | None = None, black_arguments: str = "") -> list[types.TextEdit]:
+        received.append(black_arguments)
+        return []
+
+    run_formatting_handler(monkeypatch, "file:///project/app.py", record, setting)
+    assert received == [expected]
+
+
+def test_formatting_handler_requests_setting_for_document(monkeypatch: pytest.MonkeyPatch) -> None:
+    from lsprotocol import types
+
+    def record(original: str, path: Path | None = None, black_arguments: str = "") -> list[types.TextEdit]:
+        return []
+
+    requests: list[types.ConfigurationRequest] = []
+    _ = run_formatting_handler(monkeypatch, "file:///project/app.py", record, configuration_requests=requests)
+    (request,) = requests
+    (item,) = request.params.items
+    assert (item.scope_uri, item.section) == ("file:///project/app.py", "fragments.blackArgs")
+
+
+def test_formatting_handler_responds_with_error_for_invalid_black_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from lsprotocol import types
+
+    from fragments.lsp.client_message_handlers.formatting import formatting_edits
+
+    (response,) = run_formatting_handler(monkeypatch, "untitled:Untitled-1", formatting_edits, "--pyi")
+    assert isinstance(response, types.ResponseErrorMessage)
+    assert response.error is not None
+    assert "--pyi" in response.error.message

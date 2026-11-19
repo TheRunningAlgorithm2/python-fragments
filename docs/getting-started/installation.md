@@ -14,10 +14,10 @@ To install the language server:
 pip install python-fragments[lsp]
 ```
 
-To install the code formatter:
+To install the [Black integration](../integrations/formatting/black.md) for code formatting:
 
 ``` bash
-pip install python-fragments[formatter]
+pip install python-fragments[black]
 ```
 
 To install the development and documentation dependencies:

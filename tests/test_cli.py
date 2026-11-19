@@ -13,7 +13,7 @@ CLEAN = 'x = {"a": 1}\ny = <><b>hi</b></>\n'
 
 
 def run(monkeypatch: pytest.MonkeyPatch, *arguments: str) -> int:
-    monkeypatch.setattr(sys, "argv", ["fragments", "format", *arguments])
+    monkeypatch.setattr(sys, "argv", ["fragments", "black", *arguments])
     try:
         cli.main()
     except SystemExit as error:
@@ -69,14 +69,83 @@ def test_no_files_is_an_error(monkeypatch: pytest.MonkeyPatch):
     assert run(monkeypatch) == 2
 
 
-def test_dry_run_prints_without_writing(
+def test_diff_prints_without_writing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
     path = tmp_path / "a.py"
     path.write_text(MESSY)
-    assert run(monkeypatch, "--dry-run", str(path)) == 0
-    assert capsys.readouterr().out == CLEAN
+    assert run(monkeypatch, "--diff", str(path)) == 0
+    output = capsys.readouterr()
+    assert "-x   = {'a':1}" in output.out
+    assert '+x = {"a": 1}' in output.out
+    assert "would reformat" in output.err
     assert path.read_text() == MESSY
+
+
+def test_check_with_diff_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    path = tmp_path / "a.py"
+    path.write_text(MESSY)
+    assert run(monkeypatch, "--check", "--diff", str(path)) == 1
+    assert path.read_text() == MESSY
+
+
+def test_black_options_override_project_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    (tmp_path / "pyproject.toml").write_text("[tool.black]\nline-length = 100\n")
+    path = tmp_path / "a.py"
+    path.write_text("x = [aaaaaaaaaaaa, bbbbbbbbbbbbbbbb]\n")
+    assert run(monkeypatch, "-l", "20", "-S", str(path)) == 0
+    assert path.read_text() == "x = [\n    aaaaaaaaaaaa,\n    bbbbbbbbbbbbbbbb,\n]\n"
+
+
+def test_quiet_hides_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "a.py"
+    path.write_text(MESSY)
+    assert run(monkeypatch, "-q", str(path)) == 0
+    assert capsys.readouterr().err == ""
+    assert path.read_text() == CLEAN
+
+
+def test_ignored_options_are_accepted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "a.py"
+    path.write_text(MESSY)
+    assert run(monkeypatch, "--fast", "-W", "2", "--no-color", "-v", str(path)) == 0
+    assert path.read_text() == CLEAN
+
+
+@pytest.mark.parametrize(
+    "arguments", [["--pyi"], ["--ipynb"], ["-x"], ["--line-ranges", "1-2"], ["--stdin-filename", "a.py"]]
+)
+def test_unsupported_options_fail_without_writing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    arguments: list[str],
+) -> None:
+    path = tmp_path / "a.py"
+    path.write_text(MESSY)
+    assert run(monkeypatch, *arguments, str(path)) == 2
+    assert "not supported" in capsys.readouterr().err
+    assert path.read_text() == MESSY
+
+
+def test_code_option_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert run(monkeypatch, "--code", "x=1") == 2
+
+
+def test_version_exits_cleanly(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    assert run(monkeypatch, "--version") == 0
+    assert "black" in capsys.readouterr().out
+
+
+def test_other_commands_reject_unknown_arguments(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "a.py"
+    path.write_text(CLEAN)
+    monkeypatch.setattr(sys, "argv", ["fragments", "ast", "--input", str(path), "--bogus"])
+    with pytest.raises(SystemExit) as error:
+        cli.main()
+    assert error.value.code == 2
 
 
 def test_applies_project_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -123,5 +192,5 @@ def test_missing_black_exits_with_message(
     path = tmp_path / "a.py"
     path.write_text(MESSY)
     assert run(monkeypatch, str(path)) == 1
-    assert "pip install python-fragments[format]" in capsys.readouterr().err
+    assert "pip install python-fragments[black]" in capsys.readouterr().err
     assert path.read_text() == MESSY
